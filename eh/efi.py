@@ -198,6 +198,12 @@ def generate_config(hw: dict) -> None:
     sec["ScanPolicy"] = 0x1 | 0x100 | 0x400
     cfg["Misc"]["Boot"]["Timeout"] = 5
     cfg["Misc"]["Boot"]["ShowPicker"] = True
+    # HideAuxiliary=true (défaut Sample.plist) masque l'entrée recovery
+    # macOS dans le picker (OpenCore la classe "auxiliaire", au même titre
+    # que com.apple.installer) : il faudrait maintenir Espace pour la
+    # révéler. On force false pour qu'elle soit visible d'office à côté de
+    # Windows/Linux.
+    cfg["Misc"]["Boot"]["HideAuxiliary"] = False
 
     model = _smbios_model(arch, chassis)
     serial, mlb, smuuid, rom = _gen_smbios(model)
