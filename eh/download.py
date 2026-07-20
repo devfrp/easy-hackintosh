@@ -22,6 +22,13 @@ def _boards() -> list[tuple[str, str, str, str]]:
     return rows
 
 
+def _version_number(name: str) -> str | None:
+    """Extrait le numéro entre parenthèses d'un nom affiché (« Sonoma (14) » → « 14 »)."""
+    if "(" in name and name.endswith(")"):
+        return name.rsplit("(", 1)[1][:-1]
+    return None
+
+
 def choose_version() -> dict:
     c.title("Version de macOS à installer")
     rows = _boards()
@@ -29,11 +36,15 @@ def choose_version() -> dict:
         print(f"  {c._C['b']}{i:2}{c._C['r']}) {name}")
     while True:
         try:
-            raw = input(f"Ton choix [1-{len(rows)}] : ").strip()
+            raw = input(f"Ton choix [1-{len(rows)}] (index, clé ou version macOS ex: 14) : ").strip()
         except EOFError:
             c.die("Entrée requise (mode non interactif). Utilise EH_VERSION=<clé>.")
         if raw.isdigit() and 1 <= int(raw) <= len(rows):
             key, name, board, mlb = rows[int(raw) - 1]
+            break
+        match = next((r for r in rows if raw.lower() in (r[0], _version_number(r[1]))), None)
+        if match:
+            key, name, board, mlb = match
             break
         c.warn("Entrée invalide.")
     board = os.environ.get("EH_BOARD_ID", board)
