@@ -172,7 +172,20 @@ def generate_config(hw: dict) -> None:
                                                      # au boot du DMG recovery (monté en ramdisk)
 
     sec = cfg["Misc"]["Security"]
-    sec["SecureBootModel"], sec["Vault"], sec["ScanPolicy"] = "Disabled", "Optional", 0
+    sec["SecureBootModel"], sec["Vault"] = "Disabled", "Optional"
+    # ScanPolicy=0 (illimité) fait remonter dans le picker les OS déjà
+    # installés sur le disque interne de la machine cible, en plus de la
+    # recovery macOS du support de boot — l'utilisateur doit alors choisir
+    # parmi plusieurs OS au lieu d'arriver direct sur l'image générée.
+    # FileSystemLock+DeviceLock (0x3) restreignent le scan aux types
+    # déclarés ci-dessous ; on ne déclare que APFS (0x100, requis par
+    # UEFI>APFS>EnableJumpstart — la recovery DMG est montée en RAM comme
+    # un conteneur APFS, cf ocvalidate "EnableJumpstart is enabled but
+    # ScanPolicy does not allow APFS scanning"), ESP (0x400, partition FAT
+    # où vit com.apple.recovery.boot/, cf image.py) et USB (0x200000, le
+    # support de boot lui-même) : le disque interne (SATA/NVMe) n'est
+    # jamais scanné, seule l'image macOS du support USB reste dans le menu.
+    sec["ScanPolicy"] = 0x1 | 0x2 | 0x100 | 0x400 | 0x200000
     cfg["Misc"]["Boot"]["Timeout"] = 5
     cfg["Misc"]["Boot"]["ShowPicker"] = True
 
