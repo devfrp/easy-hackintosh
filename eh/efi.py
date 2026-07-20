@@ -124,6 +124,13 @@ def _apply_quirks(cfg: dict, arch: str, family: str) -> None:
         "EnableWriteUnprotector": False, "ProtectUefiServices": True,
         "RebuildAppleMemoryMap": True, "SetupVirtualMap": True,
         "SyncRuntimePermissions": True,
+        # Firmwares OEM bon marché (mini-PC génériques type N100) mentent sur
+        # la memory map remise à ExitBootServices : le premier appel échoue et
+        # OpenCore reste bloqué juste après "LOG:EXITBS:START" (testé sur N100
+        # réel, 2026-07-20). ForceExitBootServices force un retry avec une
+        # map réduite, ProtectMemoryRegions protège les zones RT contre la
+        # corruption par ce même firmware bugué.
+        "ForceExitBootServices": True, "ProtectMemoryRegions": True,
     })
     kq = cfg["Kernel"]["Quirks"]
     kq.update({"DisableIoMapper": True, "PanicNoKextDump": True,
