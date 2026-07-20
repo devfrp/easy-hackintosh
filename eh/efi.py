@@ -13,7 +13,14 @@ from . import common as c
 from . import opencore
 
 _KEEP_DRIVERS = {"OpenRuntime.efi", "OpenCanopy.efi", "ResetNvramEntry.efi",
-                  "OpenPartitionDxe.efi"}  # requis pour partitionner le DMG recovery monté (APFS)
+                  "OpenPartitionDxe.efi", "OpenHfsPlus.efi"}
+# OpenPartitionDxe : requis pour partitionner le DMG recovery monté.
+# OpenHfsPlus : le volume à l'intérieur de BaseSystem.dmg est en réalité
+# HFS+ (vérifié en décompressant le DMG avec `qemu-img convert -f dmg`,
+# signature "H+" à l'offset standard 1024 — PAS de conteneur APFS/NXSB
+# nulle part dans l'image). Toute la piste APFS/Jumpstart suivie
+# précédemment était une fausse piste : le vrai bloquant est l'absence du
+# driver HFS+ (voir _sync_uefi_drivers ci-dessous).
 
 
 def build_tree() -> None:
@@ -127,19 +134,29 @@ def _apply_quirks(cfg: dict, arch: str, family: str) -> None:
         kq["ProvideCurrentCpuInfo"] = True
 
 
-_FORCE_ENABLE_DRIVERS = {"OpenRuntime.efi", "OpenPartitionDxe.efi"}
+_FORCE_ENABLE_DRIVERS = {"OpenRuntime.efi", "OpenPartitionDxe.efi", "OpenHfsPlus.efi"}
+# Sample.plist référence encore l'ancien nom du driver HFS+ ("HfsPlus.efi"),
+# renommé "OpenHfsPlus.efi" dans les releases OpenCorePkg récentes — sans ce
+# renommage, _sync_uefi_drivers ne le retrouve jamais dans `present` et le
+# désactive silencieusement.
+_RENAME_DRIVERS = {"HfsPlus.efi": "OpenHfsPlus.efi"}
 
 
 def _sync_uefi_drivers(cfg: dict) -> None:
     """Le Sample.plist référence des drivers que build_tree() a retirés du
-    dossier Drivers (dont l'ancien nom HfsPlus.efi) : n'active que ceux
-    réellement présents, sinon OpenCore plante au boot en "cannot be found".
+    dossier Drivers, sous leur ancien nom pour certains (HfsPlus.efi) : on
+    corrige le nom puis n'active que ceux réellement présents, sinon
+    OpenCore plante au boot en "cannot be found".
     OpenPartitionDxe.efi est désactivé par défaut dans le Sample alors qu'il
     est requis pour partitionner le DMG recovery monté (sinon "OCB: Failed to
-    get bootable file off DMG" — le conteneur APFS n'est jamais exposé)."""
+    get bootable file off DMG"). OpenHfsPlus.efi est nécessaire car le volume
+    dans BaseSystem.dmg est HFS+ (vérifié par décompression du DMG), pas
+    APFS : sans ce driver, aucun SimpleFileSystemProtocol n'est exposé pour
+    la partition et OpenCore échoue avec "LoadImage failed - Unsupported"."""
     present = {f.name for f in (c.EFI / "OC" / "Drivers").glob("*.efi")}
     for d in cfg["UEFI"]["Drivers"]:
-        path = d.get("Path")
+        path = _RENAME_DRIVERS.get(d.get("Path"), d.get("Path"))
+        d["Path"] = path
         if path not in present:
             d["Enabled"] = False
         elif path in _FORCE_ENABLE_DRIVERS:
@@ -168,34 +185,27 @@ def generate_config(hw: dict) -> None:
     nv["csr-active-config"] = b"\x00\x00\x00\x00"   # SIP activé
     nv["prev-lang:kbd"] = b"fr:1"
 
-    cfg["UEFI"]["APFS"]["JumpstartHotPlug"] = True  # sinon "LoadImage failed - Unsupported"
-                                                     # au boot du DMG recovery (monté en ramdisk)
+    # Le volume dans BaseSystem.dmg est HFS+, pas APFS (cf ScanPolicy
+    # ci-dessous) : Jumpstart ne sert à rien ici, on le désactive pour éviter
+    # l'avertissement ocvalidate "EnableJumpstart enabled but ScanPolicy does
+    # not allow APFS scanning" plutôt que de rouvrir le bit APFS pour rien.
+    cfg["UEFI"]["APFS"]["EnableJumpstart"] = False
 
     sec = cfg["Misc"]["Security"]
     sec["SecureBootModel"], sec["Vault"] = "Disabled", "Optional"
-    # ScanPolicy=0 (illimité) fait remonter dans le picker les OS déjà
-    # installés sur le disque interne de la machine cible, en plus de la
-    # recovery macOS du support de boot — d'où l'idée d'ajouter
-    # OC_SCAN_DEVICE_LOCK (0x2) pour ne garder que le support USB. Mais
-    # OC_SCAN_DEVICE_LOCK CASSE le boot du DMG recovery : le conteneur APFS
-    # *virtuel* exposé par Jumpstart au chargement du DMG en RAM a un device
-    # path synthétique (VenHw/MemoryMapped) qu'OcGetDevicePolicyType ne sait
-    # classer dans AUCUN type de bus (SATA/USB/NVMe/PCI...) — c'est un FIXME
-    # connu du code source d'OpenCorePkg (Library/OcBootManagementLib/
-    # PolicyManagement.c, réf. acidanthera/bugtracker#335, "RamDisk exception
-    # non gérée") : la fonction renvoie 0, et 0 & N'IMPORTE-QUEL-bit vaut
-    # toujours 0 → "OCJS: Cannot connect, Policy error" puis "OCB: LoadImage
-    # failed - Unsupported", quels que soient les bits ajoutés (USB, PCI...
-    # testés, aucun ne suffit). Confirmé en rejouant le boot en QEMU (build
-    # DEBUG d'OpenCore, USB émulé) : log identique au blocage vu sur le N100
-    # réel. Seule option : ne PAS activer DeviceLock. On garde uniquement
-    # FileSystemLock (0x1) + APFS (0x100, requis par UEFI>APFS>EnableJumpstart)
-    # + ESP (0x400, partition FAT où vit com.apple.recovery.boot/, cf
-    # image.py) : ça filtre les autres systèmes de fichiers (NTFS, etc.) mais
-    # PAS par device — un macOS déjà installé sur le disque interne (APFS
-    # lui aussi) redeviendrait visible dans le picker. Compromis accepté :
-    # un picker qui boote > un picker propre qui ne boote pas.
-    sec["ScanPolicy"] = 0x1 | 0x100 | 0x400
+    # Le volume à l'intérieur de BaseSystem.dmg est HFS+, pas APFS (confirmé
+    # en décompressant le DMG avec qemu-img : signature "H+" à l'offset
+    # standard, aucun NXSB nulle part). ScanPolicy doit donc autoriser le
+    # filesystem HFS (bit OC_SCAN_ALLOW_FS_HFS = 0x200), qui manquait
+    # complètement jusqu'ici — la piste APFS/Jumpstart/DeviceLock creusée
+    # avant (cf historique des commits ScanPolicy) était une fausse piste :
+    # même avec DeviceLock retiré, un ScanPolicy sans le bit HFS ne peut de
+    # toute façon jamais faire remonter un volume HFS+ dans le picker. On
+    # garde FileSystemLock (0x1) sans DeviceLock (0x2) — cf commit
+    # 292b761 : le device path synthétique du DMG monté en RAM n'est
+    # classable dans aucun bus connu par OcGetDevicePolicyType, DeviceLock
+    # bloquerait donc tout systématiquement, indépendamment du filesystem.
+    sec["ScanPolicy"] = 0x1 | 0x200 | 0x400
     cfg["Misc"]["Boot"]["Timeout"] = 5
     cfg["Misc"]["Boot"]["ShowPicker"] = True
     # HideAuxiliary=true (défaut Sample.plist) masque l'entrée recovery
