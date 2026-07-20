@@ -66,9 +66,9 @@ Everything lands in `build/` (delete `build/` to start over):
 
 | File | Content |
 |---|---|
-| `build/out/macOS-<version>.img` | Bootable image (Linux — USB or QEMU) |
+| `build/out/macOS-<version>.iso` | Hybrid bootable ISO, single file (Linux — USB or QEMU) |
 | `build/EFI/` | Generated OpenCore EFI folder |
-| `build/out/run-qemu.sh` | Boots the image in a VM (Linux) |
+| `build/out/run-qemu.sh` | Boots the ISO in a VM (Linux) |
 | `build/hardware.json` | Hardware scan results |
 
 **Test in a VM (Linux):** `build/out/run-qemu.sh`
@@ -76,7 +76,7 @@ Everything lands in `build/` (delete `build/` to start over):
 **Write to USB (Linux)** — ⚠️ wipes the stick, double-check `/dev/sdX`:
 
 ```bash
-sudo dd if=build/out/macOS-*.img of=/dev/sdX bs=4M oflag=sync status=progress
+sudo dd if=build/out/macOS-*.iso of=/dev/sdX bs=4M oflag=sync status=progress
 ```
 
 **Windows**: the script detects USB sticks, asks for confirmation (`OUI`), then

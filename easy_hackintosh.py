@@ -36,7 +36,7 @@ def _summary(img) -> None:
     print(f"Matériel    : {c.HWENV}")
     if c.IS_LINUX:
         print(f"\nTester en VM : {c.OUT / 'run-qemu.sh'}")
-        print("Écrire USB   : sudo dd if=<image> of=/dev/sdX bs=4M oflag=sync status=progress")
+        print("Écrire USB   : sudo dd if=<iso> of=/dev/sdX bs=4M oflag=sync status=progress")
     print("\nAuto inclus : SSDT ACPI (dont USB/RHUB), kexts, Wi-Fi (Intel/Broadcom).")
     print("Optionnel : mapping USB *précis* (limite 15 ports) via USBToolBox sous Windows.")
     c.warn("EFI de DÉPART : boot non garanti tel quel. À valider/ajuster (guide Dortania).")

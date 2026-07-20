@@ -1,6 +1,7 @@
 """eh.image — fabrique le support bootable, spécifique à l'OS.
 
-Linux : image disque GPT+FAT32 (rootless, mtools+sgdisk) → clé USB ou VM QEMU.
+Linux : ISO hybride UEFI (xorriso, un seul fichier .iso, GPT hybride via
+partition ESP annexée) → dd sur clé USB ou -cdrom en VM QEMU.
 Windows : écriture directe sur une clé USB (diskpart), avec confirmation.
 Les deux préparent le même contenu ESP : EFI/ + com.apple.recovery.boot/.
 """
@@ -12,6 +13,8 @@ import tempfile
 from pathlib import Path
 
 from . import common as c
+
+_ESP_GUID = "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"      # EFI System Partition
 
 
 def _dir_size(p: Path) -> int:
@@ -42,53 +45,52 @@ def _need(*cmds: str) -> None:
     missing = [x for x in cmds if not shutil.which(x)]
     if missing:
         c.die(f"commande(s) manquante(s) : {', '.join(missing)} "
-              f"(installe mtools + gptfdisk)")
-
-
-def _make_gpt(img: Path, gap: int, esp_sectors: int) -> None:
-    """Crée une table GPT avec une partition ESP (EF00). sgdisk sinon sfdisk."""
-    if shutil.which("sgdisk"):
-        subprocess.run(["sgdisk", "-o", str(img)], check=True, stdout=subprocess.DEVNULL)
-        subprocess.run(["sgdisk", "-a", "1", "-n",
-                        f"1:{gap}:{gap + esp_sectors - 1}", "-t", "1:EF00",
-                        "-c", "1:EFI", str(img)], check=True, stdout=subprocess.DEVNULL)
-    else:  # fallback util-linux (presque toujours présent)
-        script = f"label: gpt\nstart={gap}, size={esp_sectors}, type=uefi, name=EFI\n"
-        subprocess.run(["sfdisk", str(img)], input=script, text=True,
-                       check=True, stdout=subprocess.DEVNULL)
+              f"(installe mtools + xorriso)")
 
 
 def _build_linux(ver_key: str) -> Path:
-    c.title("Fabrication de l'image bootable (Linux)")
-    _need("mformat", "mcopy", "mmd", "truncate", "dd")
-    if not (shutil.which("sgdisk") or shutil.which("sfdisk")):
-        c.die("sgdisk (gptfdisk) ou sfdisk (util-linux) requis")
+    """Un seul fichier .iso, hybride UEFI (xorriso) : dd-able sur clé USB ou
+    utilisable direct en -cdrom QEMU. La partition ESP (EFI/ +
+    com.apple.recovery.boot/) est un FAT annexé, exactement ce que voit
+    OpenCore au boot — même contenu qu'avant, juste plus de GPT/sgdisk séparés."""
+    c.title("Fabrication de l'ISO bootable (Linux)")
+    _need("mformat", "mcopy", "mmd", "xorriso")
     mb = _esp_mb()
     esp_sectors = mb * 2048
-    esp = c.OUT / "esp.img"
-    img = c.OUT / f"macOS-{ver_key}.img"
-    for p in (esp, img):
-        p.unlink(missing_ok=True)
+    efiboot = c.OUT / "efiboot.img"
+    iso_root = c.OUT / "iso_root"
+    img = c.OUT / f"macOS-{ver_key}.iso"
+    efiboot.unlink(missing_ok=True)
+    img.unlink(missing_ok=True)
+    if iso_root.exists():
+        shutil.rmtree(iso_root)
+    iso_root.mkdir()
     c.log(f"ESP : {mb} Mo")
 
-    subprocess.run(["mformat", "-C", "-i", str(esp), "-T", str(esp_sectors),
+    subprocess.run(["mformat", "-C", "-i", str(efiboot), "-T", str(esp_sectors),
                     "-F", "-v", "EFIBOOT", "::"], check=True)
-    subprocess.run(["mmd", "-i", str(esp), "::/EFI"], check=True)
-    subprocess.run(["mcopy", "-i", str(esp), "-s", str(c.EFI / "BOOT"), "::/EFI/"], check=True)
-    subprocess.run(["mcopy", "-i", str(esp), "-s", str(c.EFI / "OC"), "::/EFI/"], check=True)
-    subprocess.run(["mmd", "-i", str(esp), "::/com.apple.recovery.boot"], check=True)
+    subprocess.run(["mmd", "-i", str(efiboot), "::/EFI"], check=True)
+    subprocess.run(["mcopy", "-i", str(efiboot), "-s", str(c.EFI / "BOOT"), "::/EFI/"], check=True)
+    subprocess.run(["mcopy", "-i", str(efiboot), "-s", str(c.EFI / "OC"), "::/EFI/"], check=True)
+    subprocess.run(["mmd", "-i", str(efiboot), "::/com.apple.recovery.boot"], check=True)
     for f in _recovery_files():
-        subprocess.run(["mcopy", "-i", str(esp), str(f),
+        subprocess.run(["mcopy", "-i", str(efiboot), str(f),
                         "::/com.apple.recovery.boot/"], check=True)
 
-    gap = 2048
-    total = gap + esp_sectors + 2048
-    subprocess.run(["truncate", "-s", str(total * 512), str(img)], check=True)
-    _make_gpt(img, gap, esp_sectors)
-    subprocess.run(["dd", f"if={esp}", f"of={img}", "bs=512", f"seek={gap}",
-                    "conv=notrunc", "status=none"], check=True)
-    esp.unlink(missing_ok=True)
-    c.ok(f"Image prête : {img}")
+    subprocess.run([
+        "xorriso", "-as", "mkisofs",
+        "-iso-level", "3", "-full-iso9660-filenames", "-volid", "EFIBOOT",
+        "-appended_part_as_gpt",
+        "-eltorito-alt-boot",
+        "-e", "--interval:appended_partition_2:all::",
+        "-no-emul-boot",
+        "-append_partition", "2", _ESP_GUID, str(efiboot),
+        "-output", str(img),
+        str(iso_root),
+    ], check=True, stdout=subprocess.DEVNULL)
+    efiboot.unlink(missing_ok=True)
+    shutil.rmtree(iso_root)
+    c.ok(f"ISO prête : {img}")
     _write_qemu_helper(img)
     return img
 
@@ -99,7 +101,7 @@ def _write_qemu_helper(img: Path) -> None:
         ovmf = "/usr/share/OVMF/OVMF_CODE.fd"
     script = c.OUT / "run-qemu.sh"
     script.write_text(f"""#!/usr/bin/env bash
-# Test rapide de l'image en VM (qemu + edk2-ovmf requis).
+# Test rapide de l'ISO en VM (qemu + edk2-ovmf requis).
 IMG="${{1:-{img}}}"
 OVMF="${{OVMF:-{ovmf}}}"
 qemu-system-x86_64 \\
@@ -107,8 +109,7 @@ qemu-system-x86_64 \\
   -smp 4 -m 4096 -accel kvm \\
   -drive if=pflash,format=raw,readonly=on,file="$OVMF" \\
   -device qemu-xhci -device usb-kbd -device usb-tablet \\
-  -drive id=install,if=none,format=raw,file="$IMG" \\
-  -device ide-hd,bus=ide.0,drive=install \\
+  -cdrom "$IMG" \\
   -netdev user,id=net0 -device vmxnet3,netdev=net0 -vga vmware
 """)
     script.chmod(0o755)

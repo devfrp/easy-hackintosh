@@ -5,14 +5,13 @@ import shutil
 
 from . import common as c
 
-_LINUX_CMDS = ["mformat", "mcopy", "lspci", "lsusb"]
-_LINUX_PARTITIONERS = ["sgdisk", "sfdisk"]
+_LINUX_CMDS = ["mformat", "mcopy", "xorriso", "lspci", "lsusb"]
 _WIN_CMDS = ["powershell", "diskpart"]
 
 _HINT = {
-    "arch": "sudo pacman -S --needed dosfstools gptfdisk mtools pciutils usbutils qemu-full edk2-ovmf",
-    "debian": "sudo apt-get install -y dosfstools gdisk mtools pciutils usbutils qemu-system-x86 ovmf",
-    "fedora": "sudo dnf install -y dosfstools gdisk mtools pciutils usbutils qemu-system-x86 edk2-ovmf",
+    "arch": "sudo pacman -S --needed dosfstools libisoburn mtools pciutils usbutils qemu-full edk2-ovmf",
+    "debian": "sudo apt-get install -y dosfstools xorriso mtools pciutils usbutils qemu-system-x86 ovmf",
+    "fedora": "sudo dnf install -y dosfstools xorriso mtools pciutils usbutils qemu-system-x86 edk2-ovmf",
 }
 
 
@@ -30,8 +29,6 @@ def check() -> None:
     c.title("Dépendances système")
     cmds = _WIN_CMDS if c.IS_WINDOWS else _LINUX_CMDS
     missing = [x for x in cmds if not shutil.which(x)]
-    if not c.IS_WINDOWS and not any(shutil.which(x) for x in _LINUX_PARTITIONERS):
-        missing.append("sgdisk|sfdisk")
     if not missing:
         c.ok("Outils système présents")
         return

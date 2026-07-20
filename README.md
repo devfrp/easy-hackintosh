@@ -66,9 +66,9 @@ Tout est écrit dans `build/` (efface `build/` pour repartir de zéro) :
 
 | Fichier | Contenu |
 |---|---|
-| `build/out/macOS-<version>.img` | Image bootable (Linux : USB ou QEMU) |
+| `build/out/macOS-<version>.iso` | ISO bootable hybride, un seul fichier (Linux : USB ou QEMU) |
 | `build/EFI/` | Dossier EFI OpenCore généré |
-| `build/out/run-qemu.sh` | Lance l'image dans une VM (Linux) |
+| `build/out/run-qemu.sh` | Lance l'ISO dans une VM (Linux) |
 | `build/hardware.json` | Résultat du scan matériel |
 
 **Tester en VM (Linux) :** `build/out/run-qemu.sh`
@@ -76,7 +76,7 @@ Tout est écrit dans `build/` (efface `build/` pour repartir de zéro) :
 **Écrire sur USB (Linux)** — ⚠️ efface la clé, vérifie `/dev/sdX` :
 
 ```bash
-sudo dd if=build/out/macOS-*.img of=/dev/sdX bs=4M oflag=sync status=progress
+sudo dd if=build/out/macOS-*.iso of=/dev/sdX bs=4M oflag=sync status=progress
 ```
 
 **Windows** : le script détecte les clés USB, demande confirmation (`OUI`), puis
