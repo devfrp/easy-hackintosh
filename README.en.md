@@ -7,7 +7,7 @@ folder for your hardware. **Linux and Windows.**
 
 A single Python tool:
 
-1. **asks which macOS version** (High Sierra → Sequoia);
+1. **asks which macOS version** (High Sierra → Tahoe);
 2. **downloads Apple's recovery** (via `macrecovery`);
 3. **scans all hardware** (CPU, iGPU/dGPU, Ethernet, Wi-Fi, audio codec, NVMe);
 4. **installs matching kexts** (Lilu, VirtualSMC, WhateverGreen, AppleALC…);
@@ -94,8 +94,11 @@ formats GPT/FAT32 and copies the EFI + recovery via `diskpart`.
 - The EFI is still a **starting point**, not a perfect turnkey config. No tool guarantees
   a first-try boot. Optional/advanced tuning:
   - **Precise USB mapping** (15-port-per-controller limit) → USBToolBox on Windows;
-  - **Intel Wi-Fi on Sequoia**: no stable build yet → Sonoma build as fallback, verify;
+  - **Intel Wi-Fi on Sequoia/Tahoe**: no stable build yet → Sonoma build as fallback, verify;
   - very specific ACPI → SSDTTime + [Dortania guide](https://dortania.github.io/OpenCore-Install-Guide/).
+- **Tahoe (26)**: the last macOS version with any Intel support, but **only 4 real models**
+  (MacPro7,1, MacBookPro16,1/16,2, iMac20,1/20,2) — the macOS installer rejects the spoofed
+  SMBIOS if it doesn't match one of these. macOS 27 will be Apple Silicon only.
 - **Laptops** are trickier (battery, sleep, Wi-Fi, USB).
 
 ## Auto-handled hardware

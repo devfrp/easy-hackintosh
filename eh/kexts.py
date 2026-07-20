@@ -58,6 +58,7 @@ _ITLWM_ASSET = {
     "high-sierra": "HighSierra", "mojave": "Mojave", "catalina": "Catalina",
     "big-sur": "BigSur", "monterey": "Monterey", "ventura": "Ventura",
     "sonoma": "Sonoma14.4", "sequoia": "Sonoma14.4",  # pas encore de build Sequoia stable
+    "tahoe": "Sonoma14.4",  # pas encore de build Tahoe stable
 }
 
 
@@ -65,8 +66,8 @@ def _install_airportitlwm(ver_key: str | None) -> None:
     """Wi-Fi Intel : télécharge AirportItlwm correspondant à la version macOS."""
     key = ver_key or "sonoma"
     marker = _ITLWM_ASSET.get(key, "Sonoma14.4")
-    if key == "sequoia":
-        c.warn("Wi-Fi Intel : pas de build Sequoia stable → build Sonoma14.4 (à vérifier).")
+    if key in ("sequoia", "tahoe"):
+        c.warn(f"Wi-Fi Intel : pas de build {key.capitalize()} stable → build Sonoma14.4 (à vérifier).")
     url = c.gh_latest_asset("OpenIntelWireless/itlwm",
                             rf"AirportItlwm.*{marker}.*\.kext\.zip")
     if not url:

@@ -7,7 +7,7 @@ Génère **automatiquement** un installeur macOS bootable et un dossier
 
 Un seul outil (Python) :
 
-1. **demande la version** de macOS (High Sierra → Sequoia) ;
+1. **demande la version** de macOS (High Sierra → Tahoe) ;
 2. **télécharge la recovery** Apple (via `macrecovery`) ;
 3. **scanne tout le matériel** (CPU, iGPU/dGPU, Ethernet, Wi-Fi, codec audio, NVMe) ;
 4. **installe les kexts** correspondants (Lilu, VirtualSMC, WhateverGreen, AppleALC…) ;
@@ -94,8 +94,11 @@ formate en GPT/FAT32 et copie l'EFI + la recovery via `diskpart`.
 - L'EFI reste un **point de départ**, pas un config parfait clé en main. Aucun outil ne
   garantit un boot du premier coup. Réglages optionnels/avancés :
   - **Mapping USB précis** (limite de 15 ports par contrôleur) → USBToolBox sous Windows ;
-  - **Wi-Fi Intel sous Sequoia** : pas encore de build stable → build Sonoma en repli, à vérifier ;
+  - **Wi-Fi Intel sous Sequoia/Tahoe** : pas encore de build stable → build Sonoma en repli, à vérifier ;
   - ACPI très spécifique → SSDTTime + [guide Dortania](https://dortania.github.io/OpenCore-Install-Guide/).
+- **Tahoe (26)** : dernière version macOS à supporter Intel, mais **seulement 4 modèles réels**
+  (MacPro7,1, MacBookPro16,1/16,2, iMac20,1/20,2) — l'installeur macOS refuse le SMBIOS
+  spoofé s'il ne matche pas un de ces modèles. macOS 27 sera Apple Silicon uniquement.
 - Les **laptops** sont plus délicats (batterie, veille, Wi-Fi, USB).
 
 ## Matériel géré automatiquement
