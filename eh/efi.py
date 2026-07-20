@@ -175,17 +175,27 @@ def generate_config(hw: dict) -> None:
     sec["SecureBootModel"], sec["Vault"] = "Disabled", "Optional"
     # ScanPolicy=0 (illimité) fait remonter dans le picker les OS déjà
     # installés sur le disque interne de la machine cible, en plus de la
-    # recovery macOS du support de boot — l'utilisateur doit alors choisir
-    # parmi plusieurs OS au lieu d'arriver direct sur l'image générée.
-    # FileSystemLock+DeviceLock (0x3) restreignent le scan aux types
-    # déclarés ci-dessous ; on ne déclare que APFS (0x100, requis par
-    # UEFI>APFS>EnableJumpstart — la recovery DMG est montée en RAM comme
-    # un conteneur APFS, cf ocvalidate "EnableJumpstart is enabled but
-    # ScanPolicy does not allow APFS scanning"), ESP (0x400, partition FAT
-    # où vit com.apple.recovery.boot/, cf image.py) et USB (0x200000, le
-    # support de boot lui-même) : le disque interne (SATA/NVMe) n'est
-    # jamais scanné, seule l'image macOS du support USB reste dans le menu.
-    sec["ScanPolicy"] = 0x1 | 0x2 | 0x100 | 0x400 | 0x200000
+    # recovery macOS du support de boot — d'où l'idée d'ajouter
+    # OC_SCAN_DEVICE_LOCK (0x2) pour ne garder que le support USB. Mais
+    # OC_SCAN_DEVICE_LOCK CASSE le boot du DMG recovery : le conteneur APFS
+    # *virtuel* exposé par Jumpstart au chargement du DMG en RAM a un device
+    # path synthétique (VenHw/MemoryMapped) qu'OcGetDevicePolicyType ne sait
+    # classer dans AUCUN type de bus (SATA/USB/NVMe/PCI...) — c'est un FIXME
+    # connu du code source d'OpenCorePkg (Library/OcBootManagementLib/
+    # PolicyManagement.c, réf. acidanthera/bugtracker#335, "RamDisk exception
+    # non gérée") : la fonction renvoie 0, et 0 & N'IMPORTE-QUEL-bit vaut
+    # toujours 0 → "OCJS: Cannot connect, Policy error" puis "OCB: LoadImage
+    # failed - Unsupported", quels que soient les bits ajoutés (USB, PCI...
+    # testés, aucun ne suffit). Confirmé en rejouant le boot en QEMU (build
+    # DEBUG d'OpenCore, USB émulé) : log identique au blocage vu sur le N100
+    # réel. Seule option : ne PAS activer DeviceLock. On garde uniquement
+    # FileSystemLock (0x1) + APFS (0x100, requis par UEFI>APFS>EnableJumpstart)
+    # + ESP (0x400, partition FAT où vit com.apple.recovery.boot/, cf
+    # image.py) : ça filtre les autres systèmes de fichiers (NTFS, etc.) mais
+    # PAS par device — un macOS déjà installé sur le disque interne (APFS
+    # lui aussi) redeviendrait visible dans le picker. Compromis accepté :
+    # un picker qui boote > un picker propre qui ne boote pas.
+    sec["ScanPolicy"] = 0x1 | 0x100 | 0x400
     cfg["Misc"]["Boot"]["Timeout"] = 5
     cfg["Misc"]["Boot"]["ShowPicker"] = True
 
