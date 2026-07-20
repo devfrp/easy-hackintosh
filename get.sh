@@ -35,10 +35,14 @@ say "Lancement de l'assistant"
 cd "$DIR"
 if [ -t 0 ]; then
   exec python3 easy_hackintosh.py
-elif [ -r /dev/tty ]; then
-  # stdin est le tube de `curl | sh` (déjà à EOF) : on rattache le terminal réel
-  # pour que les prompts interactifs (choix de version, confirmation USB…) marchent.
+elif ( : < /dev/tty ) 2>/dev/null; then
+  # stdin est le tube de `curl | sh` (déjà à EOF) : on rattache le terminal de
+  # contrôle réel pour que les prompts interactifs (choix de version,
+  # confirmation USB…) marchent. Le test d'ouverture se fait dans un
+  # sous-shell : `exec` est un built-in spécial, une redirection ratée dessus
+  # tuerait tout le script s'il n'était pas isolé.
   exec python3 easy_hackintosh.py < /dev/tty
 else
+  # pas de terminal de contrôle (ex : pipeline CI) : reste non interactif.
   exec python3 easy_hackintosh.py
 fi
