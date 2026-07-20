@@ -1,10 +1,10 @@
 # get.ps1 — Windows : installe Python/Git si besoin, récupère easy-hackintosh, lance l'assistant.
-# Usage (PowerShell) :  irm <URL>/get.ps1 | iex
+# Usage (PowerShell) :  irm https://raw.githubusercontent.com/devfrp/easy-hackintosh/main/get.ps1 | iex
 #   Variables : $env:REPO, $env:DIR, $env:EH_VERSION
 #   ⚠ L'écriture sur clé USB (diskpart) exige une console PowerShell "Administrateur".
 $ErrorActionPreference = 'Stop'
 
-$Repo = if ($env:REPO) { $env:REPO } else { 'https://github.com/USER/easy-hackintosh' }
+$Repo = if ($env:REPO) { $env:REPO } else { 'https://github.com/devfrp/easy-hackintosh' }
 $Dir  = if ($env:DIR)  { $env:DIR }  else { Join-Path $HOME 'easy-hackintosh' }
 function Say($m) { Write-Host ":: $m" -ForegroundColor Cyan }
 

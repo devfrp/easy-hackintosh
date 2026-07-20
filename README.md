@@ -21,19 +21,19 @@ Un seul outil (Python) :
 **Linux :**
 
 ```bash
-curl -fsSL <URL>/get.sh | sh
+curl -fsSL https://raw.githubusercontent.com/devfrp/easy-hackintosh/main/get.sh | sh
 ```
 
 **Windows** (PowerShell ; console *Administrateur* pour l'écriture USB) :
 
 ```powershell
-irm <URL>/get.ps1 | iex
+irm https://raw.githubusercontent.com/devfrp/easy-hackintosh/main/get.ps1 | iex
 ```
 
 ### Ou manuellement
 
 ```bash
-git clone <URL_DU_DEPOT> easy-hackintosh
+git clone https://github.com/devfrp/easy-hackintosh.git
 cd easy-hackintosh
 python3 easy_hackintosh.py          # Windows : python easy_hackintosh.py
 ```

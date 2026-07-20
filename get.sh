@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 # get.sh — Linux : installe les dépendances, récupère easy-hackintosh, lance l'assistant.
-# Usage :  curl -fsSL <URL>/get.sh | sh
+# Usage :  curl -fsSL https://raw.githubusercontent.com/devfrp/easy-hackintosh/main/get.sh | sh
 #   Variables : REPO=<url git>, DIR=<dossier cible>, EH_VERSION=<clé macOS>
 set -eu
 
-REPO="${REPO:-https://github.com/USER/easy-hackintosh}"
+REPO="${REPO:-https://github.com/devfrp/easy-hackintosh}"
 DIR="${DIR:-$HOME/easy-hackintosh}"
 say() { printf '\033[36m::\033[0m %s\n' "$1"; }
 
