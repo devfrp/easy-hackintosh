@@ -33,4 +33,12 @@ fi
 
 say "Lancement de l'assistant"
 cd "$DIR"
-exec python3 easy_hackintosh.py
+if [ -t 0 ]; then
+  exec python3 easy_hackintosh.py
+elif [ -r /dev/tty ]; then
+  # stdin est le tube de `curl | sh` (déjà à EOF) : on rattache le terminal réel
+  # pour que les prompts interactifs (choix de version, confirmation USB…) marchent.
+  exec python3 easy_hackintosh.py < /dev/tty
+else
+  exec python3 easy_hackintosh.py
+fi
