@@ -12,7 +12,8 @@ from pathlib import Path
 from . import common as c
 from . import opencore
 
-_KEEP_DRIVERS = {"OpenRuntime.efi", "OpenCanopy.efi", "ResetNvramEntry.efi"}
+_KEEP_DRIVERS = {"OpenRuntime.efi", "OpenCanopy.efi", "ResetNvramEntry.efi",
+                  "OpenPartitionDxe.efi"}  # requis pour partitionner le DMG recovery monté (APFS)
 
 
 def build_tree() -> None:
@@ -126,6 +127,25 @@ def _apply_quirks(cfg: dict, arch: str, family: str) -> None:
         kq["ProvideCurrentCpuInfo"] = True
 
 
+_FORCE_ENABLE_DRIVERS = {"OpenRuntime.efi", "OpenPartitionDxe.efi"}
+
+
+def _sync_uefi_drivers(cfg: dict) -> None:
+    """Le Sample.plist référence des drivers que build_tree() a retirés du
+    dossier Drivers (dont l'ancien nom HfsPlus.efi) : n'active que ceux
+    réellement présents, sinon OpenCore plante au boot en "cannot be found".
+    OpenPartitionDxe.efi est désactivé par défaut dans le Sample alors qu'il
+    est requis pour partitionner le DMG recovery monté (sinon "OCB: Failed to
+    get bootable file off DMG" — le conteneur APFS n'est jamais exposé)."""
+    present = {f.name for f in (c.EFI / "OC" / "Drivers").glob("*.efi")}
+    for d in cfg["UEFI"]["Drivers"]:
+        path = d.get("Path")
+        if path not in present:
+            d["Enabled"] = False
+        elif path in _FORCE_ENABLE_DRIVERS:
+            d["Enabled"] = True
+
+
 def generate_config(hw: dict) -> None:
     c.title("Génération du config.plist")
     cfg = plistlib.loads(opencore.sample_plist().read_bytes())
@@ -135,6 +155,7 @@ def generate_config(hw: dict) -> None:
     cfg["Kernel"]["Add"] = _kext_entries()
     cfg["ACPI"]["Add"] = _acpi_entries()
     _apply_quirks(cfg, arch, family)
+    _sync_uefi_drivers(cfg)
 
     boot_args = f"-v keepsyms=1 debug=0x100 alcid={hw.get('audio_layout', 1)}"
     if str(hw.get("dgpu", "")).startswith("amd:"):
@@ -146,6 +167,9 @@ def generate_config(hw: dict) -> None:
     nv["boot-args"] = boot_args
     nv["csr-active-config"] = b"\x00\x00\x00\x00"   # SIP activé
     nv["prev-lang:kbd"] = b"fr:1"
+
+    cfg["UEFI"]["APFS"]["JumpstartHotPlug"] = True  # sinon "LoadImage failed - Unsupported"
+                                                     # au boot du DMG recovery (monté en ramdisk)
 
     sec = cfg["Misc"]["Security"]
     sec["SecureBootModel"], sec["Vault"], sec["ScanPolicy"] = "Disabled", "Optional", 0

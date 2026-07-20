@@ -26,9 +26,15 @@ def _esp_mb() -> int:
 
 
 def _recovery_files() -> list[Path]:
-    if not c.RECOVERY.exists():
+    """macrecovery.py écrit dans RECOVERY/com.apple.recovery.boot/ (son outdir
+    par défaut) : c'est ce sous-dossier qu'il faut copier sur l'ESP, pas
+    RECOVERY/ lui-même (qui ne contient que download.log à la racine)."""
+    d = c.RECOVERY / "com.apple.recovery.boot"
+    if not d.exists():
+        d = c.RECOVERY
+    if not d.exists():
         return []
-    return [f for f in c.RECOVERY.iterdir() if f.is_file()]
+    return [f for f in d.iterdir() if f.is_file()]
 
 
 # --------------------------------------------------------------------------- Linux
