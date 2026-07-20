@@ -132,6 +132,15 @@ def _apply_quirks(cfg: dict, arch: str, family: str) -> None:
         # corruption par ce même firmware bugué.
         "ForceExitBootServices": True, "ProtectMemoryRegions": True,
     })
+    # Toujours bloqué à EXITBS:START avec les 2 quirks ci-dessus (testé N100
+    # réel, 2026-07-20, même log). Doc OpenCore : SetupVirtualMap est requis
+    # sur la majorité des firmwares mais casse justement (hang après
+    # ExitBootServices) sur certains firmwares Intel récents (Ice Lake, Comet
+    # Lake, Z490/B460) — aucune règle universelle, à tester au cas par cas.
+    # Le N100 (Alder Lake-N) partage la lignée silicium avec ces plateformes
+    # connues incompatibles : on désactive pour tester, RebuildAppleMemoryMap
+    # reste actif (mécanisme alternatif pour le même problème de memory map).
+    cfg["Booter"]["Quirks"]["SetupVirtualMap"] = False
     kq = cfg["Kernel"]["Quirks"]
     kq.update({"DisableIoMapper": True, "PanicNoKextDump": True,
                "PowerTimeoutKernelPanic": True})
