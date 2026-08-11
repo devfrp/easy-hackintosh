@@ -1,6 +1,8 @@
 # easy-hackintosh 🍏
 
-*[Version française →](README.md)*
+*Read this in: **English** · [Français](README.md)*
+
+🌐 **Website:** <https://devfrp.github.io/easy-hackintosh/>
 
 **Automatically** builds a bootable macOS installer and a matching **OpenCore EFI**
 folder for your hardware. **Linux and Windows.**
