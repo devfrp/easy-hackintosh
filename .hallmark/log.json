@@ -1,0 +1,29 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "site",
+  "shape": "Index-First",
+  "theme": "formwork",
+  "axes": "mid/display-condensed/warm",
+  "hero": "Banner",
+  "nav": "edge-aligned",
+  "footer": "letter close",
+  "imagery": "none",
+  "photos": [],
+  "entry": "none",
+  "sections": [
+   "hero",
+   "table",
+   "split",
+   "rows",
+   "plates",
+   "table",
+   "rows"
+  ],
+  "signature": "the hardware index, each detected part beside its kext",
+  "waived": [],
+  "prompt": "easy-hackintosh docs",
+  "date": "2026-10-27"
+ }
+]

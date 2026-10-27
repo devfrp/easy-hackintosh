@@ -3,377 +3,223 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>easy-hackintosh — installeur macOS + EFI OpenCore générés pour ta machine</title>
+<title>easy-hackintosh : installeur macOS + EFI OpenCore générés pour ta machine</title>
 <meta name="description" content="Génère automatiquement un installeur macOS bootable et un dossier EFI OpenCore adapté au matériel de ta machine, depuis Linux ou Windows. Un seul outil Python.">
 <meta name="author" content="devfrp">
-<meta property="og:title" content="easy-hackintosh — un hackintosh généré pour ta machine">
+<meta property="og:title" content="easy-hackintosh : un hackintosh généré pour ta machine">
 <meta property="og:description" content="Scan matériel, kexts, config.plist OpenCore validé, support bootable. Linux et Windows, en une ligne.">
 <meta property="og:type" content="website">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='5' fill='%230d1013'/><rect x='9' y='9' width='14' height='14' rx='2' fill='none' stroke='%23f2795a' stroke-width='2'/><path d='M13 5 v4 M19 5 v4 M13 23 v4 M19 23 v4 M5 13 h4 M5 19 h4 M23 13 h4 M23 19 h4' fill='none' stroke='%23f2795a' stroke-width='2' stroke-linecap='round'/></svg>">
-<style>
-  :root{
-    /* light: cool datasheet */
-    --bg:#eceff2; --panel:#ffffff; --panel2:#f3f5f7; --term:#12161b;
-    --line:#d3dae0; --line2:#bcc6cf; --ink:#141a20; --dim:#5c6a76;
-    --amber:#bb3f1c; --amber-ink:#932d10; --lock:#2f9e44;
-    --grid:#e2e7ec;
-    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
-    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  }
-  @media (prefers-color-scheme:dark){
-    :root{
-      --bg:#0d1013; --panel:#14181d; --panel2:#191f26; --term:#0a0d10;
-      --line:#262e37; --line2:#3a4753; --ink:#ccd4da; --dim:#7c8791;
-      --amber:#f2795a; --amber-ink:#f79b84; --lock:#57c96a; --grid:#1a2027;
-    }
-  }
-  :root[data-theme="light"]{
-    --bg:#eceff2; --panel:#ffffff; --panel2:#f3f5f7; --term:#12161b;
-    --line:#d3dae0; --line2:#bcc6cf; --ink:#141a20; --dim:#5c6a76;
-    --amber:#bb3f1c; --amber-ink:#932d10; --lock:#2f9e44; --grid:#e2e7ec;
-  }
-  :root[data-theme="dark"]{
-    --bg:#0d1013; --panel:#14181d; --panel2:#191f26; --term:#0a0d10;
-    --line:#262e37; --line2:#3a4753; --ink:#ccd4da; --dim:#7c8791;
-    --amber:#f2795a; --amber-ink:#f79b84; --lock:#57c96a; --grid:#1a2027;
-  }
-
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
-    line-height:1.62;-webkit-font-smoothing:antialiased;font-size:16px}
-  a{color:var(--amber);text-decoration:none}
-  a:hover{text-decoration:underline}
-  :focus-visible{outline:2px solid var(--amber);outline-offset:2px}
-  .wrap{max-width:1000px;margin:0 auto;padding:0 22px}
-  .mono{font-family:var(--mono)}
-  .lab{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
-
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px}
-
-  /* top bar */
-  .bar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 88%,transparent);
-    backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-  .bar .wrap{display:flex;align-items:center;gap:18px;height:56px}
-  .logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-weight:600;
-    letter-spacing:.02em;color:var(--ink)}
-  .logo svg{display:block}
-  .bar nav{margin-left:auto;display:flex;gap:20px;align-items:center}
-  .bar nav a{font-family:var(--mono);font-size:.8rem;color:var(--dim);letter-spacing:.03em}
-  .bar nav a:hover{color:var(--ink);text-decoration:none}
-  .bar .gh{border:1px solid var(--line2);padding:6px 12px;border-radius:5px;color:var(--ink)}
-  .bar .gh:hover{border-color:var(--amber)}
-  #themetog{background:none;border:1px solid var(--line2);color:var(--dim);border-radius:5px;
-    width:30px;height:30px;cursor:pointer;font-size:.9rem}
-  #themetog:hover{color:var(--ink);border-color:var(--amber)}
-  .langsel{display:inline-flex;border:1px solid var(--line2);border-radius:5px;overflow:hidden;
-    font-family:var(--mono);font-size:.74rem}
-  .langsel a{padding:5px 9px;color:var(--dim);letter-spacing:.04em}
-  .langsel a:hover{color:var(--ink);text-decoration:none}
-  .langsel a.active{background:var(--amber);color:#fff}
-  @media (prefers-color-scheme:dark){.langsel a.active{color:#0d1013}}
-  :root[data-theme="dark"] .langsel a.active{color:#0d1013}
-  :root[data-theme="light"] .langsel a.active{color:#fff}
-  @media(max-width:680px){.bar nav a.opt{display:none}}
-
-  /* hero */
-  .hero{border-bottom:1px solid var(--line);position:relative}
-  .hero .wrap{padding:60px 22px 0}
-  .tag{display:inline-flex;align-items:center;gap:9px}
-  .tag .led{width:8px;height:8px;border-radius:50%;background:var(--lock);
-    box-shadow:0 0 8px 1px color-mix(in srgb,var(--lock) 60%,transparent)}
-  h1{font-size:clamp(2.2rem,6.4vw,3.9rem);line-height:1.02;letter-spacing:-.02em;
-    margin:18px 0 0;text-wrap:balance;font-weight:800}
-  h1 .u{color:var(--amber)}
-  .sub{font-size:clamp(1.02rem,2.3vw,1.24rem);color:var(--dim);max-width:620px;margin:14px 0 0}
-  .cta{display:flex;flex-wrap:wrap;gap:11px;margin:26px 0 34px}
-  .btn{font-family:var(--mono);font-size:.86rem;border-radius:5px;padding:11px 18px;
-    border:1px solid var(--line2);color:var(--ink);cursor:pointer;background:var(--panel);
-    transition:border-color .12s,transform .12s;letter-spacing:.02em}
-  .btn:hover{text-decoration:none;transform:translateY(-1px);border-color:var(--amber)}
-  .btn.p{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:600}
-  @media (prefers-color-scheme:dark){.btn.p{color:#0d1013}}
-  :root[data-theme="dark"] .btn.p{color:#0d1013}
-  :root[data-theme="light"] .btn.p{color:#fff}
-
-  /* terminal command */
-  .term{background:var(--term);border:1px solid var(--line);border-radius:6px;
-    display:flex;align-items:center;gap:12px;padding:13px 13px 13px 16px;max-width:690px}
-  .term+.term{margin-top:10px}
-  .term .p{color:var(--amber);font-family:var(--mono);user-select:none}
-  .term code{font-family:var(--mono);color:#d6dee6;font-size:.86rem;flex:1;overflow-x:auto;white-space:nowrap}
-  .term button{font-family:var(--mono);background:#20272f;border:1px solid #313b45;color:#9aa6b1;
-    border-radius:4px;padding:6px 11px;cursor:pointer;font-size:.76rem;white-space:nowrap}
-  .term button:hover{color:#fff;border-color:var(--amber)}
-
-  /* scan strip */
-  .scope{margin-top:40px;border-top:1px solid var(--line);position:relative;height:118px}
-  .scope canvas{display:block;width:100%;height:118px}
-  .scope .rd{position:absolute;top:10px;right:16px;font-family:var(--mono);font-size:.68rem;
-    letter-spacing:.12em;color:var(--dim)}
-
-  /* section scaffold */
-  .sec{border-bottom:1px solid var(--line);padding:56px 0}
-  .head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
-  .head .idx{font-family:var(--mono);font-size:.72rem;color:var(--amber);letter-spacing:.1em}
-  h2{font-size:clamp(1.45rem,3.6vw,2rem);margin:0;letter-spacing:-.01em;font-weight:750;text-wrap:balance}
-  .lede{color:var(--dim);max-width:660px;margin:14px 0 30px}
-
-  /* modules */
-  .mods{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;
-    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));overflow:hidden}
-  .mod{background:var(--panel);padding:22px}
-  .mod:hover{background:var(--panel2)}
-  .mod .lab{margin-bottom:9px}
-  .mod h3{margin:0 0 5px;font-size:1.04rem}
-  .mod p{margin:0;color:var(--dim);font-size:.92rem}
-  .mod h3 code,.mod p code{font-family:var(--mono);font-size:.86em;color:var(--amber-ink)}
-
-  /* register readout */
-  .rdout{border:1px solid var(--line);border-radius:6px;overflow:hidden;overflow-x:auto}
-  .rdout table{width:100%;border-collapse:collapse;min-width:520px}
-  .rdout th{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
-    color:var(--dim);text-align:left;padding:11px 16px;background:var(--panel2);border-bottom:1px solid var(--line)}
-  .rdout td{padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:top;font-size:.92rem}
-  .rdout tr:last-child td{border-bottom:none}
-  .rdout tr:hover td{background:var(--panel2)}
-  .rdout .v{font-family:var(--mono);color:var(--amber);white-space:nowrap;font-size:.86rem}
-  .rdout .s{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;color:var(--lock)}
-  .rdout .s.open{color:var(--dim)}
-  .rdout td b{font-weight:650} .rdout td span{color:var(--dim)}
-
-  /* pipeline */
-  .flow{display:grid;gap:12px}
-  .node{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:16px 18px;
-    display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
-  .node .n{font-family:var(--mono);font-size:.82rem;color:var(--amber);white-space:nowrap}
-  .node .d{color:var(--dim);font-size:.92rem}
-  .node.hw{border-color:var(--amber);border-left-width:3px}
-  .flow .arrow{font-family:var(--mono);color:var(--line2);text-align:center;font-size:.8rem;line-height:1}
-
-  /* install cols */
-  .cols{display:grid;gap:18px;grid-template-columns:1fr 1fr}
-  @media(max-width:680px){.cols{grid-template-columns:1fr}}
-  pre.blk{background:var(--term);border:1px solid var(--line);border-radius:6px;padding:16px;
-    overflow-x:auto;font-family:var(--mono);font-size:.82rem;color:#d6dee6;line-height:1.7;margin:0}
-  pre.blk .c{color:#6f7c88} pre.blk .f{color:var(--amber)}
-  .cols h3{font-family:var(--mono);font-size:.8rem;letter-spacing:.06em;color:var(--dim);
-    text-transform:uppercase;margin:0 0 10px}
-
-  /* caveats */
-  .steps{list-style:none;padding:0;margin:0;display:grid;gap:10px}
-  .steps li{display:grid;grid-template-columns:110px 1fr;gap:16px;align-items:start;
-    border:1px solid var(--line);border-radius:6px;padding:14px 16px;background:var(--panel)}
-  .chip{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;padding:4px 8px;border-radius:4px;
-    text-align:center;font-weight:600;align-self:start}
-  .c-done{background:color-mix(in srgb,var(--lock) 15%,transparent);color:var(--lock);
-    border:1px solid color-mix(in srgb,var(--lock) 40%,transparent)}
-  .c-part{background:color-mix(in srgb,var(--amber) 15%,transparent);color:var(--amber-ink);
-    border:1px solid color-mix(in srgb,var(--amber) 40%,transparent)}
-  .c-card{background:var(--panel2);color:var(--dim);border:1px solid var(--line2)}
-  .steps b{font-weight:650} .steps .d{color:var(--dim);font-size:.92rem}
-  @media(max-width:560px){.steps li{grid-template-columns:1fr}}
-
-  footer{padding:40px 0 64px;color:var(--dim);font-size:.88rem}
-  footer .wrap{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:flex-start}
-  footer .disc{max-width:560px}
-  footer .links{font-family:var(--mono);font-size:.82rem;display:flex;gap:8px;flex-wrap:wrap}
-  .kbd{font-family:var(--mono);background:var(--panel2);border:1px solid var(--line2);
-    padding:1px 6px;border-radius:4px;font-size:.85em;color:var(--ink)}
-</style>
+<link rel="alternate" hreflang="en" href="index.en.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Archivo:wght@400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>try{var s=localStorage.getItem('ehx-theme');if(s==='dark'||s==='light')document.documentElement.setAttribute('data-theme',s);}catch(e){}</script>
 </head>
-<body>
-
-<header class="bar"><div class="wrap">
-  <a class="logo" href="#top">
-    <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="5" fill="var(--panel2)" stroke="var(--line2)"/><rect x="10" y="10" width="12" height="12" rx="2" fill="none" stroke="var(--amber)" stroke-width="2"/><path d="M14 6 v4 M19 6 v4 M14 22 v4 M19 22 v4 M6 14 h4 M6 19 h4 M22 14 h4 M22 19 h4" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"/></svg>
-    easy-hackintosh
-  </a>
-  <nav>
-    <a class="opt" href="#pipeline">Pipeline</a>
-    <a class="opt" href="#hw">Matériel</a>
-    <a href="#install">Installer</a>
-    <span class="langsel" role="group" aria-label="Langue">
-      <a href="index.html" class="active" aria-current="page">FR</a>
-      <a href="index.en.html">EN</a>
-    </span>
-    <a class="gh" href="https://github.com/devfrp/easy-hackintosh">GitHub&nbsp;↗</a>
-    <button id="themetog" title="Changer de thème" aria-label="Basculer thème clair/sombre">◐</button>
-  </nav>
-</div></header>
+<body class="grained">
+<a class="skip" href="#top">Aller au contenu</a>
+<header class="bar">
+  <div class="container bar-inner">
+    <a class="logo" href="#top" aria-label="easy-hackintosh, haut de la page">easy-hackintosh</a>
+    <nav class="bar-nav" aria-label="Sections">
+      <a class="opt" href="#hw">Matériel</a>
+      <a class="opt" href="#pipeline">Pipeline</a>
+      <a href="#install">Installer</a>
+    </nav>
+    <div class="bar-end">
+      <span class="langsel" role="group" aria-label="Langue">
+        <a href="index.html" class="active" aria-current="page">FR</a>
+        <a href="index.en.html">EN</a>
+      </span>
+      <a class="gh" href="https://github.com/devfrp/easy-hackintosh">GitHub</a>
+      <button id="themetog" type="button" title="Changer de thème" aria-label="Basculer thème clair/sombre">Thème</button>
+    </div>
+  </div>
+</header>
 
 <main id="top">
-<section class="hero">
-  <div class="wrap">
-    <span class="tag"><span class="led"></span><span class="lab">OpenCore · scan matériel → EFI → support bootable</span></span>
-    <h1>Un hackintosh,<br><span class="u">généré pour ta machine</span>.</h1>
-    <p class="sub">Un seul outil Python qui scanne ton matériel, choisit les kexts, écrit un
-    <code class="mono">config.plist</code> OpenCore validé et fabrique l'installeur macOS bootable.
-    Depuis Linux ou Windows — jamais besoin d'un Mac.</p>
-    <div class="cta">
-      <a class="btn p" href="#install">Installer en une ligne</a>
-      <a class="btn" href="#hw">Matériel géré</a>
-      <a class="btn" href="https://github.com/devfrp/easy-hackintosh">Sources</a>
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-text">
+        <h1>Un hackintosh, généré pour ta machine.</h1>
+        <p class="lead">Depuis Linux ou Windows : jamais besoin d’un Mac.</p>
+        <div class="cta">
+          <a class="btn btn--primary" href="#install">Installer en une ligne</a>
+          <a class="btn btn--secondary" href="https://github.com/devfrp/easy-hackintosh">Sources</a>
+        </div>
+      </div>
+      <div class="cmds">
+        <div class="cmd">
+          <p class="cmd-cap">Linux</p>
+          <div class="term"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/devfrp/easy-hackintosh/main/get.sh | sh</code><button id="cpb" type="button" onclick="cp('cmd','cpb')">copier</button></div>
+        </div>
+        <div class="cmd">
+          <p class="cmd-cap">Windows (PowerShell)</p>
+          <div class="term"><code id="cmdw">irm https://raw.githubusercontent.com/devfrp/easy-hackintosh/main/get.ps1 | iex</code><button id="cpbw" type="button" onclick="cp('cmdw','cpbw')">copier</button></div>
+        </div>
+      </div>
     </div>
-    <div class="term">
-      <span class="p">$</span>
-      <code id="cmd">curl -fsSL https://raw.githubusercontent.com/devfrp/easy-hackintosh/main/get.sh | sh</code>
-      <button id="cpb" onclick="cp('cmd','cpb')">copier</button>
+  </section>
+
+  <section class="sec sec--first" id="hw">
+    <div class="container">
+      <div class="head">
+        <h2>Ce qu’il détecte, ce qu’il installe</h2>
+        <p class="lead">Chaque composant détecté déclenche le kext ou le SSDT qui lui correspond : aucune case à cocher.</p>
+      </div>
+      <div class="spec-wrap"><table class="spec">
+        <thead><tr><th>Composant détecté</th><th>Kext / SSDT</th><th>État</th></tr></thead>
+        <tbody>
+          <tr><td><b>iGPU Intel / dGPU AMD</b><span>correctifs d’affichage et d’accélération</span></td><td class="v">WhateverGreen</td><td class="s">auto</td></tr>
+          <tr><td><b>Audio (Realtek ALC…)</b><span>avec un <code>layout-id</code> de départ</span></td><td class="v">AppleALC</td><td class="s">auto</td></tr>
+          <tr><td><b>Ethernet Intel / Realtek</b><span>choisi selon le contrôleur trouvé</span></td><td class="v">IntelMausi, RealtekRTL8111, LucyRTL8125</td><td class="s">auto</td></tr>
+          <tr><td><b>Wi-Fi Intel / Broadcom</b><span>build de kext choisi selon la version de macOS</span></td><td class="v">AirportItlwm, AirportBrcmFixup</td><td class="s">auto</td></tr>
+          <tr><td><b>USB</b><span>ré-énumération de tous les ports</span></td><td class="v">SSDT-RHUB</td><td class="s">auto</td></tr>
+          <tr><td><b>ACPI : EC, horloge, CPU, rétroéclairage</b><span>SSDT universels <em>boot-safe</em> (Dortania)</span></td><td class="v">SSDT-EC/USBX, AWAC, PLUG, PNLF</td><td class="s">auto</td></tr>
+          <tr><td><b>NVMe</b><span>correctifs de compatibilité</span></td><td class="v">NVMeFix</td><td class="s">auto</td></tr>
+          <tr><td><b>SMC</b><span>obligatoire : émulation du contrôleur Apple</span></td><td class="v">VirtualSMC + plugins</td><td class="s">auto</td></tr>
+          <tr class="opt-row"><td><b>Mapping USB précis</b><span>limite de 15 ports par contrôleur : USBToolBox sous Windows</span></td><td class="v">manuel</td><td class="s">optionnel</td></tr>
+        </tbody>
+      </table></div>
     </div>
-    <div class="term">
-      <span class="p">PS&gt;</span>
-      <code id="cmdw">irm https://raw.githubusercontent.com/devfrp/easy-hackintosh/main/get.ps1 | iex</code>
-      <button id="cpbw" onclick="cp('cmdw','cpbw')">copier</button>
+  </section>
+
+  <section class="sec" id="about">
+    <div class="container about">
+      <h2>Le montage manuel, fait à ta place</h2>
+      <div class="vs">
+        <div class="vs-col">
+          <p class="vs-cap">Monter un hackintosh à la main, c’est</p>
+          <ul>
+            <li>lire un guide de cent pages</li>
+            <li>deviner quels kexts s’appliquent à ta carte</li>
+            <li>écrire un <code>config.plist</code> à la pince</li>
+            <li>fabriquer une clé USB depuis un Mac que tu n’as pas</li>
+          </ul>
+        </div>
+        <div class="vs-col vs-col--after">
+          <p class="vs-cap"><b>easy-hackintosh</b> fait les quatre :</p>
+          <ul>
+            <li>il demande la version de macOS</li>
+            <li>télécharge la recovery officielle Apple</li>
+            <li>lit ton matériel réel</li>
+            <li>et écrit un EFI OpenCore qui lui correspond, validé par <code>ocvalidate</code> avant d’être écrit sur le support</li>
+          </ul>
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="scope" aria-hidden="true">
-    <span class="rd">SCAN · CPU · iGPU/dGPU · ETH · WIFI · AUDIO · NVME</span>
-    <canvas id="scope"></canvas>
-  </div>
-</section>
+  </section>
 
-<section class="sec" id="about"><div class="wrap">
-  <div class="head"><span class="idx">00</span><h2>Le montage manuel, fait à ta place</h2></div>
-  <p class="lede">Monter un hackintosh à la main, c'est lire un guide de cent pages, deviner quels
-  kexts s'appliquent à ta carte, écrire un <code class="mono">config.plist</code> à la pince, puis
-  fabriquer une clé USB depuis un Mac que tu n'as pas. <b>easy-hackintosh</b> fait les quatre :
-  il demande la version de macOS, télécharge la recovery officielle Apple, lit ton matériel
-  réel et écrit un EFI OpenCore qui lui correspond — validé par <code class="mono">ocvalidate</code>
-  avant d'être écrit sur le support.</p>
-</div></section>
+  <section class="sec sec--l" id="pipeline">
+    <div class="container">
+      <div class="head">
+        <h2>De la question au support bootable</h2>
+        <p class="lead">Sept étapes enchaînées par un seul assistant. Tout atterrit dans <code>build/</code> : efface le dossier pour repartir de zéro.</p>
+      </div>
+      <ol class="runs">
+        <li><span class="name">version</span><p>Choix de la version de macOS, de High&nbsp;Sierra à <b>Tahoe&nbsp;(26)</b> ; non interactif avec <code>EH_VERSION=sequoia</code></p></li>
+        <li><span class="name">recovery</span><p>Téléchargement de la recovery officielle depuis les serveurs Apple, via <code>macrecovery</code></p></li>
+        <li class="hw"><span class="name">scan</span><p>Lecture du matériel réel : CPU, iGPU/dGPU, Ethernet, Wi-Fi, codec audio, NVMe, <b>écrit dans <code>build/hardware.json</code></b></p></li>
+        <li><span class="name">kexts</span><p>Installation des kexts correspondants : Lilu, VirtualSMC, WhateverGreen, AppleALC, pilotes réseau…</p></li>
+        <li><span class="name">config</span><p>Génération du <code>config.plist</code> OpenCore : quirks et SMBIOS adaptés à la machine</p></li>
+        <li><span class="name">ocvalidate</span><p>Validation de la configuration par l’outil officiel OpenCore avant toute écriture</p></li>
+        <li><span class="name">support</span><p>Image ISO hybride bootable (Linux : clé USB ou VM QEMU) ou écriture directe sur clé USB (Windows)</p></li>
+      </ol>
+    </div>
+  </section>
 
-<section class="sec" id="pipeline"><div class="wrap">
-  <div class="head"><span class="idx">01</span><h2>La chaîne, de la question au support bootable</h2></div>
-  <p class="lede">Sept étapes enchaînées par un seul assistant. Tout atterrit dans
-  <code class="mono">build/</code> — efface le dossier pour repartir de zéro.</p>
-  <div class="flow">
-    <div class="node"><span class="n">1 · version</span><span class="d">Choix de la version de macOS, de High&nbsp;Sierra à <b>Tahoe&nbsp;(26)</b> — non interactif avec <code class="mono">EH_VERSION=sequoia</code></span></div>
-    <div class="arrow">↓</div>
-    <div class="node"><span class="n">2 · recovery</span><span class="d">Téléchargement de la recovery officielle depuis les serveurs Apple, via <code class="mono">macrecovery</code></span></div>
-    <div class="arrow">↓</div>
-    <div class="node hw"><span class="n">3 · scan</span><span class="d">Lecture du matériel réel : CPU, iGPU/dGPU, Ethernet, Wi-Fi, codec audio, NVMe — <b>écrit dans <code class="mono">build/hardware.json</code></b></span></div>
-    <div class="arrow">↓</div>
-    <div class="node"><span class="n">4 · kexts</span><span class="d">Installation des kexts correspondants : Lilu, VirtualSMC, WhateverGreen, AppleALC, pilotes réseau…</span></div>
-    <div class="arrow">↓</div>
-    <div class="node"><span class="n">5 · config</span><span class="d">Génération du <code class="mono">config.plist</code> OpenCore : quirks et SMBIOS adaptés à la machine</span></div>
-    <div class="arrow">↓</div>
-    <div class="node"><span class="n">6 · ocvalidate</span><span class="d">Validation de la configuration par l'outil officiel OpenCore avant toute écriture</span></div>
-    <div class="arrow">↓</div>
-    <div class="node"><span class="n">7 · support</span><span class="d">Image ISO hybride bootable (Linux : clé USB ou VM QEMU) ou écriture directe sur clé USB (Windows)</span></div>
-  </div>
-</div></section>
-
-<section class="sec" id="hw"><div class="wrap">
-  <div class="head"><span class="idx">02</span><h2>Matériel géré automatiquement</h2></div>
-  <p class="lede">Chaque composant détecté déclenche le kext ou le SSDT qui lui correspond —
-  aucune case à cocher.</p>
-  <div class="rdout"><table>
-    <thead><tr><th>Composant détecté</th><th>Kext / SSDT</th><th>État</th></tr></thead>
-    <tbody>
-      <tr><td><b>iGPU Intel / dGPU AMD</b><br><span>correctifs d'affichage et d'accélération</span></td><td class="v">WhateverGreen</td><td class="s">AUTO</td></tr>
-      <tr><td><b>Audio (Realtek ALC…)</b><br><span>avec un <code class="mono">layout-id</code> de départ</span></td><td class="v">AppleALC</td><td class="s">AUTO</td></tr>
-      <tr><td><b>Ethernet Intel / Realtek</b><br><span>choisi selon le contrôleur trouvé</span></td><td class="v">IntelMausi · RealtekRTL8111 · LucyRTL8125</td><td class="s">AUTO</td></tr>
-      <tr><td><b>Wi-Fi Intel / Broadcom</b><br><span>build de kext choisi selon la version de macOS</span></td><td class="v">AirportItlwm · AirportBrcmFixup</td><td class="s">AUTO</td></tr>
-      <tr><td><b>USB</b><br><span>ré-énumération de tous les ports</span></td><td class="v">SSDT-RHUB</td><td class="s">AUTO</td></tr>
-      <tr><td><b>ACPI — EC, horloge, CPU, rétroéclairage</b><br><span>SSDT universels <em>boot-safe</em> (Dortania)</span></td><td class="v">SSDT-EC/USBX · AWAC · PLUG · PNLF</td><td class="s">AUTO</td></tr>
-      <tr><td><b>NVMe</b><br><span>correctifs de compatibilité</span></td><td class="v">NVMeFix</td><td class="s">AUTO</td></tr>
-      <tr><td><b>SMC</b><br><span>obligatoire — émulation du contrôleur Apple</span></td><td class="v">VirtualSMC + plugins</td><td class="s">AUTO</td></tr>
-      <tr><td><b>Mapping USB précis</b><br><span>limite de 15 ports par contrôleur — USBToolBox sous Windows</span></td><td class="v">manuel</td><td class="s open">OPTIONNEL</td></tr>
-    </tbody>
-  </table></div>
-</div></section>
-
-<section class="sec" id="install"><div class="wrap">
-  <div class="head"><span class="idx">03</span><h2>Installer</h2></div>
-  <p class="lede">Sous Windows, ouvre PowerShell en <b>Administrateur</b> pour l'écriture USB.
-  <span class="kbd">get.ps1</span> installe Python et Git via winget s'ils manquent ; le
-  partitionnement passe par <code class="mono">diskpart</code>, fourni avec Windows.</p>
-  <div class="cols">
-    <div>
-      <h3>Linux</h3>
-      <pre class="blk"><span class="c"># assistant complet</span>
+  <section class="sec sec--l" id="install">
+    <div class="container">
+      <div class="head">
+        <h2>Une ligne, Linux ou Windows</h2>
+        <p class="lead">Sous Windows, ouvre PowerShell en <b>Administrateur</b> pour l’écriture USB. <code>get.ps1</code> installe Python et Git via winget s’ils manquent ; le partitionnement passe par <code>diskpart</code>, fourni avec Windows.</p>
+      </div>
+      <div class="plates">
+        <figure class="plate">
+          <figcaption><h3>Linux</h3></figcaption>
+<pre><span class="c"># assistant complet</span>
 curl -fsSL https://raw.githubusercontent.com/<span class="f">devfrp/easy-hackintosh</span>/main/get.sh | sh
-
 <span class="c"># dépendances (Arch)</span>
 sudo pacman -S --needed python mtools gptfdisk \
   pciutils usbutils qemu-full edk2-ovmf</pre>
-    </div>
-    <div>
-      <h3>Windows (PowerShell)</h3>
-      <pre class="blk"><span class="c"># console Administrateur pour l'USB</span>
+        </figure>
+        <figure class="plate">
+          <figcaption><h3>Windows (PowerShell)</h3></figcaption>
+<pre><span class="c"># console Administrateur pour l’USB</span>
 irm https://raw.githubusercontent.com/<span class="f">devfrp/easy-hackintosh</span>/main/get.ps1 | iex</pre>
-      <h3 style="margin-top:18px">Manuellement</h3>
-      <pre class="blk">git clone https://github.com/devfrp/easy-hackintosh.git
+          <p class="plate-sub">Manuellement</p>
+<pre>git clone https://github.com/devfrp/easy-hackintosh.git
 cd easy-hackintosh
 python3 easy_hackintosh.py   <span class="c"># Windows : python</span></pre>
-    </div>
-  </div>
-  <div class="cols" style="margin-top:18px">
-    <div>
-      <h3>Sous-commandes</h3>
-      <pre class="blk">python3 easy_hackintosh.py         <span class="c"># tout l'assistant</span>
+        </figure>
+      </div>
+      <div class="wells">
+        <figure class="well">
+          <figcaption>Sous-commandes</figcaption>
+<pre>python3 easy_hackintosh.py         <span class="c"># tout l’assistant</span>
 python3 easy_hackintosh.py <span class="f">scan</span>    <span class="c"># scan matériel seul</span>
-python3 easy_hackintosh.py <span class="f">efi</span>     <span class="c"># régénère l'EFI</span>
+python3 easy_hackintosh.py <span class="f">efi</span>     <span class="c"># régénère l’EFI</span>
 python3 easy_hackintosh.py <span class="f">image</span>   <span class="c"># refabrique le support</span></pre>
-    </div>
-    <div>
-      <h3>Résultat &amp; test</h3>
-      <pre class="blk"><span class="c"># tester en VM (Linux)</span>
+        </figure>
+        <figure class="well">
+          <figcaption>Résultat &amp; test</figcaption>
+<pre><span class="c"># tester en VM (Linux)</span>
 build/out/run-qemu.sh
-
-<span class="c"># écrire sur USB — ⚠ efface la clé</span>
+<span class="c"># écrire sur USB, attention : efface la clé</span>
 sudo dd if=build/out/macOS-*.iso of=<span class="f">/dev/sdX</span> \
   bs=4M oflag=sync status=progress</pre>
+        </figure>
+      </div>
+      <div class="spec-wrap"><table class="spec spec--files">
+        <thead><tr><th>Fichier produit</th><th>Contenu</th></tr></thead>
+        <tbody>
+          <tr><td class="v">build/out/macOS-&lt;version&gt;.iso</td><td>ISO bootable hybride, un seul fichier (Linux : USB ou QEMU)</td></tr>
+          <tr><td class="v">build/EFI/</td><td>Dossier EFI OpenCore généré</td></tr>
+          <tr><td class="v">build/out/run-qemu.sh</td><td>Lance l’ISO dans une VM (Linux)</td></tr>
+          <tr><td class="v">build/hardware.json</td><td>Résultat du scan matériel</td></tr>
+        </tbody>
+      </table></div>
     </div>
-  </div>
-  <div class="rdout" style="margin-top:18px"><table>
-    <thead><tr><th>Fichier produit</th><th>Contenu</th></tr></thead>
-    <tbody>
-      <tr><td class="v">build/out/macOS-&lt;version&gt;.iso</td><td>ISO bootable hybride, un seul fichier (Linux : USB ou QEMU)</td></tr>
-      <tr><td class="v">build/EFI/</td><td>Dossier EFI OpenCore généré</td></tr>
-      <tr><td class="v">build/out/run-qemu.sh</td><td>Lance l'ISO dans une VM (Linux)</td></tr>
-      <tr><td class="v">build/hardware.json</td><td>Résultat du scan matériel</td></tr>
-    </tbody>
-  </table></div>
-</div></section>
+  </section>
 
-<section class="sec" id="know"><div class="wrap">
-  <div class="head"><span class="idx">04</span><h2>À savoir avant de lancer</h2></div>
-  <p class="lede">Aucun outil ne garantit un boot du premier coup. Voilà exactement où sont
-  les limites.</p>
-  <ul class="steps">
-    <li><span class="chip c-part">EN LIGNE</span><div><b>Installeur « recovery »</b> · <span class="d">macOS est téléchargé pendant l'installation — connexion requise. Un installeur complet hors-ligne exige <code class="mono">createinstallmedia</code>, qui n'existe que sous macOS.</span></div></li>
-    <li><span class="chip c-done">AUTOMATISÉ</span><div><b>ACPI, USB et Wi-Fi</b> · <span class="d">SSDT universels boot-safe (EC, USBX, AWAC, plugin-type, PNLF), USB via <code class="mono">SSDT-RHUB</code>, et le kext Wi-Fi choisi selon la version — Intel <code class="mono">AirportItlwm</code> ou Broadcom <code class="mono">AirportBrcmFixup</code>.</span></div></li>
-    <li><span class="chip c-part">POINT DE DÉPART</span><div><b>L'EFI reste à affiner</b> · <span class="d">mapping USB précis via USBToolBox (Windows) ; Wi-Fi Intel sous Sequoia/Tahoe sans build stable — repli sur le build Sonoma, à vérifier ; ACPI très spécifique → SSDTTime et le <a href="https://dortania.github.io/OpenCore-Install-Guide/">guide Dortania</a>.</span></div></li>
-    <li><span class="chip c-card">TAHOE (26)</span><div><b>Dernière version macOS Intel</b> · <span class="d">mais seulement 4 modèles réels acceptés (MacPro7,1, MacBookPro16,1/16,2, iMac20,1/20,2) — l'installeur refuse un SMBIOS spoofé qui n'en fait pas partie. macOS 27 sera Apple Silicon uniquement.</span></div></li>
-    <li><span class="chip c-card">LAPTOPS</span><div><b>Plus délicats</b> · <span class="d">batterie, veille, Wi-Fi et USB demandent presque toujours des réglages supplémentaires.</span></div></li>
-  </ul>
-</div></section>
+  <section class="sec sec--l" id="know">
+    <div class="container">
+      <div class="head">
+        <h2>À savoir avant de lancer</h2>
+        <p class="lead">Aucun outil ne garantit un boot du premier coup. Voilà exactement où sont les limites.</p>
+      </div>
+      <ul class="limits">
+        <li><span class="tag">en ligne</span><div><b>Installeur « recovery »</b><p>macOS est téléchargé pendant l’installation : connexion requise. Un installeur complet hors-ligne exige <code>createinstallmedia</code>, qui n’existe que sous macOS.</p></div></li>
+        <li><span class="tag">automatisé</span><div><b>ACPI, USB et Wi-Fi</b><p>SSDT universels boot-safe (EC, USBX, AWAC, plugin-type, PNLF), USB via <code>SSDT-RHUB</code>, et le kext Wi-Fi choisi selon la version : Intel <code>AirportItlwm</code> ou Broadcom <code>AirportBrcmFixup</code>.</p></div></li>
+        <li><span class="tag">point de départ</span><div><b>L’EFI reste à affiner</b><p>Mapping USB précis via USBToolBox (Windows) ; Wi-Fi Intel sous Sequoia/Tahoe sans build stable, repli sur le build Sonoma, à vérifier ; ACPI très spécifique : SSDTTime et le <a href="https://dortania.github.io/OpenCore-Install-Guide/">guide Dortania</a>.</p></div></li>
+        <li><span class="tag">Tahoe (26)</span><div><b>Dernière version macOS Intel</b><p>Mais seulement 4 modèles réels acceptés (MacPro7,1, MacBookPro16,1/16,2, iMac20,1/20,2) : l’installeur refuse un SMBIOS spoofé qui n’en fait pas partie. macOS 27 sera Apple Silicon uniquement.</p></div></li>
+        <li><span class="tag">portables</span><div><b>Plus délicats</b><p>Batterie, veille, Wi-Fi et USB demandent presque toujours des réglages supplémentaires.</p></div></li>
+      </ul>
+    </div>
+  </section>
 </main>
 
-<footer><div class="wrap">
-  <div class="disc"><b class="mono">easy-hackintosh</b> · Repose sur
-    <a href="https://github.com/acidanthera/OpenCorePkg">OpenCorePkg</a>, les kexts
-    <a href="https://github.com/acidanthera">Acidanthera</a> et le
-    <a href="https://dortania.github.io/OpenCore-Install-Guide/">guide Dortania</a>.<br>
-    Aucun binaire macOS n'est redistribué : la recovery est téléchargée depuis les serveurs
-    Apple. macOS est sous licence Apple pour du matériel Apple — vérifie que ton usage
-    respecte l'EULA. Projet non affilié à Apple&nbsp;Inc.</div>
-  <div class="links">
-    <a href="https://github.com/devfrp/easy-hackintosh">GitHub</a><span>·</span>
-    <a href="https://github.com/devfrp/easy-hackintosh/blob/main/README.md">README</a><span>·</span>
-    <a href="index.en.html">English</a><span>·</span>
-    <a href="https://devfrp.github.io">devfrp.github.io</a>
+<footer class="foot">
+  <div class="container foot-grid">
+    <div class="disc">
+      <p><b>easy-hackintosh</b> repose sur <a href="https://github.com/acidanthera/OpenCorePkg">OpenCorePkg</a>, les kexts <a href="https://github.com/acidanthera">Acidanthera</a> et le <a href="https://dortania.github.io/OpenCore-Install-Guide/">guide Dortania</a>.</p>
+      <p>Aucun binaire macOS n’est redistribué : la recovery est téléchargée depuis les serveurs Apple. macOS est sous licence Apple pour du matériel Apple : vérifie que ton usage respecte l’EULA. Projet non affilié à Apple&nbsp;Inc.</p>
+    </div>
+    <div class="signoff">
+      <ul class="links">
+        <li><a href="https://github.com/devfrp/easy-hackintosh">GitHub</a></li>
+        <li><a href="https://github.com/devfrp/easy-hackintosh/blob/main/README.md">Readme</a></li>
+        <li><a href="index.en.html">English</a></li>
+      </ul>
+      <p class="sign">Fait par <a href="https://devfrp.github.io">devfrp</a></p>
+    </div>
   </div>
-</div></footer>
+</footer>
 
 <script>
 (function(){
-  // thème (persisté)
+  // theme (persisted)
   var root=document.documentElement, tog=document.getElementById('themetog');
-  var saved=null; try{saved=localStorage.getItem('ehx-theme');}catch(e){}
-  if(saved==='dark'||saved==='light') root.setAttribute('data-theme',saved);
   function cur(){var t=root.getAttribute('data-theme');
     if(t) return t;
     return matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}
@@ -381,67 +227,11 @@ sudo dd if=build/out/macOS-*.iso of=<span class="f">/dev/sdX</span> \
     var n=cur()==='dark'?'light':'dark';
     root.setAttribute('data-theme',n);
     try{localStorage.setItem('ehx-theme',n);}catch(e){}
-    draw(true);
   });
-
-  // copie
+  // copy
   window.cp=function(id,bid){var b=document.getElementById(bid);
     navigator.clipboard.writeText(document.getElementById(id).textContent).then(function(){
-      b.textContent='copié ✓'; setTimeout(function(){b.textContent='copier';},1500);});};
-
-  // bandeau de scan matériel
-  var cv=document.getElementById('scope'), ctx=cv.getContext('2d'), t=0.55, raf=null;
-  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  var slots=[3,5,4,6,3,5,4,6,3,5,4,6,3,5,4,6,3,5,4,6,3,5,4,6];
-  function accent(){return getComputedStyle(root).getPropertyValue('--amber').trim()||'#f2795a';}
-  function grid(){return getComputedStyle(root).getPropertyValue('--grid').trim()||'#1a2027';}
-  function line2(){return getComputedStyle(root).getPropertyValue('--line2').trim()||'#3a4753';}
-  function size(){var d=Math.min(devicePixelRatio||1,2);
-    cv.width=cv.clientWidth*d; cv.height=cv.clientHeight*d; ctx.setTransform(d,0,0,d,0,0);}
-  function draw(once){
-    var w=cv.clientWidth,h=cv.clientHeight;
-    ctx.clearRect(0,0,w,h);
-    // fond quadrillé
-    ctx.strokeStyle=grid(); ctx.lineWidth=1;
-    for(var x=0;x<w;x+=44){ctx.beginPath();ctx.moveTo(x+.5,0);ctx.lineTo(x+.5,h);ctx.stroke();}
-    ctx.beginPath();ctx.moveTo(0,h-.5);ctx.lineTo(w,h-.5);ctx.stroke();
-    // barre de balayage
-    var head=(t%1.35)/1.35*(w+160)-80;
-    // puces détectées
-    var cw=58, gap=30, n=Math.max(1,Math.floor((w+gap)/(cw+gap))), off=(w-(n*(cw+gap)-gap))/2;
-    for(var i=0;i<n;i++){
-      var bx=off+i*(cw+gap), pins=slots[i%slots.length];
-      var lit=head>bx+cw/2, near=Math.abs(head-(bx+cw/2))<70;
-      var bh=26+((i*7)%3)*8, by=(h-bh)/2+4;
-      ctx.strokeStyle=lit?accent():line2();
-      ctx.globalAlpha=lit?(near?1:.62):.55;
-      ctx.lineWidth=lit?1.6:1;
-      ctx.strokeRect(bx+.5,by+.5,cw,bh);
-      // pattes
-      ctx.beginPath();
-      for(var p=0;p<pins;p++){
-        var px=bx+4+p*((cw-8)/(pins-1||1));
-        ctx.moveTo(px+.5,by); ctx.lineTo(px+.5,by-6);
-        ctx.moveTo(px+.5,by+bh); ctx.lineTo(px+.5,by+bh+6);
-      }
-      ctx.stroke();
-      ctx.globalAlpha=1;
-    }
-    // tête de balayage
-    if(head>-40&&head<w+40){
-      var g=ctx.createLinearGradient(head-60,0,head,0);
-      g.addColorStop(0,'transparent'); g.addColorStop(1,accent());
-      ctx.strokeStyle=g; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.moveTo(head-60,h/2+.5); ctx.lineTo(head,h/2+.5); ctx.stroke();
-      ctx.strokeStyle=accent(); ctx.lineWidth=1.5; ctx.globalAlpha=.85;
-      ctx.beginPath(); ctx.moveTo(head+.5,8); ctx.lineTo(head+.5,h-8); ctx.stroke();
-      ctx.globalAlpha=1;
-    }
-    if(once) return;
-    t+=0.008; raf=requestAnimationFrame(function(){draw(false);});
-  }
-  function start(){size(); if(reduce){t=0.9; draw(true);} else {if(raf)cancelAnimationFrame(raf); draw(false);}}
-  addEventListener('resize',start); start();
+      b.textContent='copié'; setTimeout(function(){b.textContent='copier';},1500);});};
 })();
 </script>
 </body>

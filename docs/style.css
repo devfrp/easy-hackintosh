@@ -1,0 +1,177 @@
+/* Hallmark · shape: Index-First · genre: editorial · theme: Formwork (deal 2/3, seed python-tool-scans-hardware-b8f6·c0d1dd69·2026-10-27·r0) · redesign: full · job: try · draw: 9974f2
+ * hero: Banner (swapped from a Ledge: no photograph to fill its field, and Index-First wants the index on the first screen) · nav: edge-aligned ink bar (swapped from a banner over a retracting bar: the page has no announcement) · footer: letter close · imagery: none, the hardware index carries it · signature: the hardware index, every detected part beside the kext it pulls in, starting on the first screen · formwork: cast, night pour on the toggle
+ * axes: mid/display-condensed/warm · posture: restrained · modes: cast+night pour · contrast: pass · fold: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H5 E4 S5 R4 V4 · weakest: P, a tool page; the four chores by hand beside the four things the tool does carry the claim, and the limits section says where it stops */
+/* Hallmark · dropped #scope · the SCAN · CPU · ETH meters were an endless decorative loop with made-up levels; the hardware index now holds the first screen */
+/* Hallmark · dropped the "Matériel géré" button from the hero · the hero keeps two actions (58); #hw opens right under it and stays in the nav */
+/* Hallmark · reworded the eyebrow "OpenCore · scan matériel → EFI → support bootable" out (the pipeline says it), the 00 to 04 ordinals and the "1 · version" step labels into a real list, the capitals states (AUTO, OPTIONNEL) and tags (EN LIGNE, LAPTOPS …) to lowercase, the middle dots between kext names to commas, the hero paragraph to its last sentence, and the heads "Matériel géré automatiquement", "La chaîne, de la question au support bootable", "Installer" to "Ce qu’il détecte, ce qu’il installe", "De la question au support bootable", "Une ligne, Linux ou Windows" (EN likewise) · 54, 58, 63 and 67 name them */
+/* Hallmark · reworded every em dash in the copy, the disclaimer included, to a colon, a comma or a semicolon, the arrow in "ACPI très spécifique →" to a colon, and the ⚠ in the dd comment to "attention :" · 19 names the dash, 11 the warning glyph; the disclaimer's words are otherwise verbatim */
+/* Hallmark · reworded the code block heads ("Linux", "Windows (PowerShell)", "Manuellement", "Sous-commandes", "Résultat & test") into plate heads and figcaptions, every word kept · 67 names their capitals */
+/* Hallmark · answered F13 · the code face is JetBrains Mono in place of the theme's Archivo Narrow figures: the page's figures are file paths, kext names and commands, which are code */
+/* Hallmark · reworded the English heads "Hardware handled automatically", "From the first question to bootable media", "Install", "Manually", "Sub-commands" to "What it detects, what it installs", "From first question to bootable media", "One line, Linux or Windows", and the last two into plate and well captions · 58 and 67 name them */
+@import url("./tokens.css");
+@import url("./base.css");
+
+/* night pour, on the toggle or the OS */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: oklch(27% 0.006 270); --color-paper-2: oklch(31% 0.007 270); --color-paper-3: oklch(37% 0.008 270);
+  --color-plate: oklch(33% 0.007 270); --color-plate-ink: oklch(95% 0.006 80);
+  --color-ink: oklch(95% 0.006 80); --color-ink-2: oklch(87% 0.006 80); --color-muted: oklch(80% 0.008 80);
+  --color-rule: oklch(40% 0.008 270);
+  --color-accent: oklch(70% 0.21 40); --color-accent-deep: oklch(52% 0.17 38); --color-focus: oklch(74% 0.19 40);
+  --color-bar: oklch(16% 0.005 270);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-paper: oklch(27% 0.006 270); --color-paper-2: oklch(31% 0.007 270); --color-paper-3: oklch(37% 0.008 270);
+    --color-plate: oklch(33% 0.007 270); --color-plate-ink: oklch(95% 0.006 80);
+    --color-ink: oklch(95% 0.006 80); --color-ink-2: oklch(87% 0.006 80); --color-muted: oklch(80% 0.008 80);
+    --color-rule: oklch(40% 0.008 270);
+    --color-accent: oklch(70% 0.21 40); --color-accent-deep: oklch(52% 0.17 38); --color-focus: oklch(74% 0.19 40);
+    --color-bar: oklch(16% 0.005 270);
+  }
+}
+:root { --color-bar: oklch(18% 0.005 270); --color-bar-ink: oklch(95% 0.006 80); }
+
+body { color: var(--color-ink-2); line-height: 1.5; }
+h1, h2, h3 { color: var(--color-ink); font-weight: 700; text-transform: uppercase; line-height: 1.02; }
+h2 { font-size: var(--text-display-s); }
+code, pre, .v { font-family: var(--font-outlier); font-weight: 500; }
+code { font-size: 0.88em; }
+a { color: var(--color-ink); }
+a:hover { text-decoration-color: var(--color-accent); }
+b { font-weight: 500; color: var(--color-ink); }
+
+/* the grain, cast across the paper */
+.grained { position: relative; isolation: isolate; }
+.grained::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: var(--z-tooltip); background-size: 200px 200px; opacity: var(--texture-opacity); mix-blend-mode: multiply; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 9 -4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"); }
+
+.skip { position: absolute; left: var(--space-md); top: calc(-1 * var(--space-3xl)); z-index: var(--z-toast); padding: var(--space-xs) var(--space-md); background: var(--color-bar); color: var(--color-bar-ink); }
+.skip:focus-visible { top: var(--space-md); }
+
+/* nav, an edge-aligned ink bar */
+.bar { position: sticky; top: 0; z-index: var(--z-sticky-nav); background: var(--color-bar); color: var(--color-bar-ink); }
+.bar-inner { display: flex; align-items: center; gap: var(--space-xl); min-height: 60px; }
+.bar a, .bar button { color: var(--color-bar-ink); }
+.logo { font: 700 var(--text-lg)/1 var(--font-display); text-transform: uppercase; white-space: nowrap; text-decoration: none; }
+.bar-nav { display: flex; gap: var(--space-2xs); margin-left: auto; }
+.bar-end { display: flex; align-items: center; gap: var(--space-sm); }
+.bar-nav a, .gh, .langsel a, #themetog { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-sm); border: 0; background: transparent; font: 500 var(--text-sm)/1 var(--font-body); text-decoration: none; cursor: pointer; transition: background-color var(--dur-micro) var(--ease-out); }
+.bar-nav a:hover, .gh:hover, .langsel a:hover, #themetog:hover { background: color-mix(in oklab, var(--color-bar-ink) 14%, transparent); }
+.langsel { display: flex; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-bar-ink) 40%, transparent); }
+.langsel a.active { background: var(--color-bar-ink); color: var(--color-bar); }
+.bar :focus-visible { outline-color: var(--color-accent); outline-offset: -2px; }
+
+/* hero, Banner */
+.hero { border-bottom: var(--rule-bar) solid var(--color-ink); }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-3xl); align-items: end; padding-block: var(--space-2xl); }
+.hero h1 { max-width: 13ch; font-size: clamp(3rem, 5.4vw + 0.5rem, 6rem); }
+.hero .lead { margin-top: var(--space-lg); color: var(--color-ink-2); }
+.cta { display: flex; flex-wrap: wrap; gap: var(--space-md); margin-top: var(--space-xl); }
+
+.btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 var(--space-xl); border-radius: 0; font: 700 var(--text-md)/1 var(--font-display); text-transform: uppercase; text-decoration: none; cursor: pointer; transition: translate var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn--primary { background: var(--color-accent); color: var(--color-accent-ink); box-shadow: 0 3px 0 var(--color-accent-deep); }
+.btn--primary:hover { background: color-mix(in oklab, var(--color-accent) 88%, var(--color-plate-ink)); }
+.btn--primary:active { translate: 0 3px; box-shadow: 0 0 0 var(--color-accent-deep); }
+.btn--secondary { background: var(--color-paper-2); color: var(--color-ink); border: 2px solid var(--color-ink); box-shadow: inset 0 2px 3px color-mix(in oklab, var(--color-ink) 30%, transparent); }
+.btn--secondary:hover { background: var(--color-paper-3); }
+.btn--secondary:active { translate: 0 1px; }
+
+/* the two install lines, on the ink */
+.cmds { display: grid; background: var(--color-bar); color: var(--color-bar-ink); }
+.cmd { padding: var(--space-lg); }
+.cmd + .cmd { border-top: var(--rule-hair) solid color-mix(in oklab, var(--color-bar-ink) 25%, transparent); }
+.cmd-cap { font-size: var(--text-sm); font-weight: 500; color: color-mix(in oklab, var(--color-bar-ink) 75%, var(--color-bar)); }
+.term { display: flex; align-items: center; gap: var(--space-md); margin-top: var(--space-xs); }
+.term code { flex: 1; min-width: 0; font-size: var(--text-sm); line-height: 1.6; overflow-wrap: anywhere; color: var(--color-bar-ink); }
+.term button { flex-shrink: 0; min-width: 88px; min-height: 44px; border: 2px solid var(--color-bar-ink); background: transparent; color: var(--color-bar-ink); font: 700 var(--text-sm)/1 var(--font-display); text-transform: uppercase; cursor: pointer; transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.term button:hover { background: var(--color-bar-ink); color: var(--color-bar); }
+.term button:active { translate: 0 1px; }
+.term button:focus-visible { outline-color: var(--color-accent); }
+
+/* sections */
+.sec { padding-block: var(--section-gap) 0; }
+.sec--first { padding-top: var(--space-2xl); }
+.sec--l { padding-top: var(--section-gap-l); }
+.head { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--gap-columns); align-items: end; margin-bottom: var(--space-2xl); }
+.head .lead { max-width: 46ch; }
+
+/* the hardware index and the files, spec tables */
+.spec-wrap { overflow-x: auto; }
+.spec { width: 100%; min-width: 40rem; border-collapse: collapse; border-top: var(--rule-bar) solid var(--color-ink); }
+.spec th { padding: var(--space-sm) var(--space-md) var(--space-sm) 0; text-align: left; font-size: var(--text-sm); font-weight: 500; color: var(--color-muted); white-space: nowrap; border-bottom: var(--rule-hair) solid var(--color-ink); }
+.spec td { padding: var(--space-md) var(--space-md) var(--space-md) 0; border-bottom: var(--rule-hair) solid var(--color-paper-3); vertical-align: baseline; }
+.spec td b { display: block; font-size: var(--text-title); line-height: 1.25; }
+.spec td span { display: block; margin-top: var(--space-2xs); font-size: var(--text-sm); color: var(--color-muted); }
+.spec .v { color: var(--color-ink); }
+.spec .s { width: 7rem; font-size: var(--text-sm); font-weight: 500; color: var(--color-ink); }
+.spec tbody tr:hover td { background: var(--color-paper-2); }
+.opt-row td b, .opt-row .s { color: var(--color-muted); }
+.spec--files { margin-top: var(--space-2xl); }
+.spec--files td:first-child { width: 40%; }
+
+/* by hand, and what the tool does */
+.about { display: grid; gap: var(--space-2xl); }
+.about h2 { max-width: 18ch; }
+.vs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap-columns); }
+.vs-col { border-top: var(--rule-bar) solid var(--color-ink); }
+.vs-cap { padding-block: var(--space-sm); font-size: var(--text-sm); font-weight: 500; color: var(--color-muted); }
+.vs ul { margin: 0; padding: 0; list-style: none; }
+.vs li { padding-block: var(--space-md); border-top: var(--rule-hair) solid var(--color-paper-3); font-size: var(--text-lg); line-height: 1.4; }
+.vs-col:not(.vs-col--after) li { color: var(--color-muted); }
+.vs-col--after li { color: var(--color-ink); }
+
+/* the seven steps, rows */
+.runs { margin: 0; padding: 0; list-style: none; counter-reset: r; border-top: var(--rule-bar) solid var(--color-ink); }
+.runs li { counter-increment: r; display: grid; grid-template-columns: 4rem minmax(0, 4fr) minmax(0, 7fr); gap: var(--gap-columns); align-items: baseline; padding-block: var(--space-lg); border-bottom: var(--rule-hair) solid var(--color-paper-3); }
+.runs li::before { content: counter(r); font: 700 var(--text-2xl)/1 var(--font-display); color: var(--color-ink); }
+.runs li.hw::before { color: var(--color-accent-deep); }
+.runs .name { font: 700 var(--text-title)/1.1 var(--font-display); text-transform: uppercase; color: var(--color-ink); }
+.runs p { max-width: 60ch; }
+
+/* install, two plates and two wells */
+.plates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2xl); align-items: start; }
+.plate { margin: 0; min-width: 0; padding: var(--space-xl); background: var(--color-plate); border: var(--rule-bar) solid var(--color-ink); box-shadow: var(--shadow-card); }
+.plate h3 { font-size: var(--text-2xl); padding-bottom: var(--space-md); border-bottom: var(--rule-bar) solid var(--color-ink); }
+.plate pre, .well pre { margin: var(--space-lg) 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-sm); line-height: 1.7; color: var(--color-ink); }
+.plate-sub { margin-top: var(--space-xl); font-size: var(--text-sm); font-weight: 500; color: var(--color-muted); }
+.c { color: var(--color-muted); }
+.f { color: var(--color-ink); text-decoration: underline; text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 0.2em; }
+.wells { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2xl); margin-top: var(--space-3xl); }
+.well { margin: 0; min-width: 0; padding: var(--space-lg) var(--space-xl) var(--space-xl); background: var(--color-paper-2); }
+.well figcaption { font-size: var(--text-sm); font-weight: 500; color: var(--color-muted); }
+
+/* the limits, rows */
+.limits { margin: 0; padding: 0; list-style: none; border-top: var(--rule-bar) solid var(--color-ink); }
+.limits li { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 9fr); gap: var(--gap-columns); padding-block: var(--space-lg); border-bottom: var(--rule-hair) solid var(--color-paper-3); }
+.limits .tag { font-size: var(--text-sm); font-weight: 500; color: var(--color-muted); }
+.limits b { display: block; font-size: var(--text-title); line-height: 1.25; }
+.limits p { margin-top: var(--space-xs); max-width: 62ch; }
+
+/* footer, a letter close */
+.foot { margin-top: var(--section-gap); border-top: var(--rule-bar) solid var(--color-ink); }
+.foot-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-2xl); padding-block: var(--space-2xl) var(--space-3xl); }
+.disc { display: grid; gap: var(--space-md); font-size: var(--text-sm); max-width: 62ch; }
+.signoff { display: grid; gap: var(--space-xl); justify-items: end; align-content: space-between; }
+.links { display: flex; flex-wrap: wrap; gap: var(--space-lg); margin: 0; padding: 0; list-style: none; }
+.links a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 500; }
+.sign { font: 700 var(--text-2xl)/1 var(--font-display); text-transform: uppercase; color: var(--color-ink); }
+.sign a { text-decoration-thickness: 2px; }
+
+@media (max-width: 60rem) {
+  .bar-nav, .gh { display: none; }
+  .bar-end { margin-left: auto; }
+  .hero-grid, .head, .vs, .runs li, .plates, .wells, .limits li, .foot-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
+  .hero-grid { gap: var(--space-2xl); }
+  .runs li { gap: var(--space-xs); }
+  .signoff { justify-items: start; }
+}
+@media (max-width: 40rem) {
+  .logo { font-size: var(--text-md); }
+  .bar-end { gap: var(--space-2xs); }
+  .langsel a, #themetog { padding: 0 var(--space-xs); }
+  .plate { padding: var(--space-lg); }
+}
